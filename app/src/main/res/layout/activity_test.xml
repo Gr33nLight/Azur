@@ -1,0 +1,225 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <android.support.design.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    <android.support.design.widget.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/frame"
+            app:layout_scrollFlags="scroll|enterAlways">
+
+            <android.support.v7.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="@color/theme_primary"
+                android:theme="@style/ToolBarStyle" />
+
+            <com.miguelcatalan.materialsearchview.MaterialSearchView
+                android:id="@+id/search_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+        </FrameLayout>
+
+        <android.support.design.widget.TabLayout
+            android:id="@+id/tabs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:theme="@style/ToolBarStyle"
+            android:elevation="4dp"/>
+
+
+    </android.support.design.widget.AppBarLayout>
+
+
+    <android.support.v4.view.ViewPager
+        android:id="@+id/viewpager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/appBarLayout"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" >
+
+    </android.support.v4.view.ViewPager>
+
+
+
+    </android.support.design.widget.CoordinatorLayout>
+
+
+    <LinearLayout
+        android:id="@+id/playerLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:background="#303030"
+        android:orientation="vertical"
+        android:paddingTop="5dp"
+        app:layout_scrollFlags="scroll|enterAlways">
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/currentTime"
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:layout_centerVertical="true"
+                android:layout_gravity="center"
+                android:gravity="center_horizontal"
+                android:maxLines="1"
+                android:minLines="1"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+                android:text="-:-"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textColor="#f4f4f4"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/totalTime"
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentTop="true"
+                android:layout_centerVertical="true"
+                android:layout_gravity="center"
+                android:gravity="center_horizontal"
+                android:maxLines="1"
+                android:minLines="1"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+                android:text="-:-"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textColor="#f4f4f4"
+                android:textSize="11sp" />
+
+            <SeekBar
+                android:id="@+id/seekBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toEndOf="@+id/currentTime"
+                android:layout_toLeftOf="@+id/totalTime"
+                android:layout_toRightOf="@+id/currentTime" />
+
+        </RelativeLayout>
+
+        <LinearLayout
+            android:id="@+id/linearLayout3"
+            android:layout_width="fill_parent"
+            android:layout_height="50dp"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentRight="false"
+                android:orientation="horizontal"
+                android:paddingLeft="10dp">
+
+                <ImageView
+                    android:id="@+id/bwd"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_weight="1"
+                    android:contentDescription="bwd"
+                    android:padding="10dp"
+                    android:src="@drawable/previous"
+                    android:tint="#f4f4f4" />
+
+                <ImageView
+                    android:id="@+id/playpause"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_weight="1"
+                    android:contentDescription="playpause"
+                    android:padding="10dp"
+                    android:tint="#f4f4f4" />
+
+                <ImageView
+                    android:id="@+id/fwd"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_weight="1"
+                    android:contentDescription="fwd"
+                    android:padding="10dp"
+                    android:src="@drawable/next"
+                    android:tint="#f4f4f4" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent">
+
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="left|center_vertical"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/songTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="start|center_vertical"
+                        android:maxLines="1"
+                        android:minLines="1"
+                        android:paddingLeft="10dp"
+                        android:paddingRight="5dp"
+                        android:text="Song Title title"
+                        android:textAppearance="?android:attr/textAppearanceSmall"
+                        android:textColor="#f4f4f4" />
+
+                    <TextView
+                        android:id="@+id/artistName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="left|center_vertical"
+                        android:maxLines="1"
+                        android:minLines="1"
+                        android:paddingLeft="10dp"
+                        android:paddingRight="5dp"
+                        android:text="Song Artist artist"
+                        android:textAppearance="?android:attr/textAppearanceSmall"
+                        android:textColor="#f4f4f4" />
+
+                </LinearLayout>
+
+            </FrameLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>

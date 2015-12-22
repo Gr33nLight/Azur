@@ -1,0 +1,58 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="#ffffff">
+        <RelativeLayout
+            android:id="@+id/songLayout"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:drawable="@drawable/selector_row">
+
+            <TextView
+
+                android:id="@+id/title"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:maxLines="1"
+                android:minLines="1"
+                android:padding="5dp"
+                android:text="Medium Text"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:textColor="@color/secondary_text_default_material_light"
+                android:textSize="20sp"
+                android:layout_toLeftOf="@+id/overflowBtn"
+                android:layout_toStartOf="@+id/overflowBtn" />
+
+            <TextView
+                android:id="@+id/artist"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/title"
+                android:layout_marginLeft="10dp"
+                android:maxLines="1"
+                android:minLines="1"
+                android:padding="5dp"
+                android:text="Medium Text"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:layout_toLeftOf="@+id/overflowBtn"
+                android:layout_toStartOf="@+id/overflowBtn" />
+
+            <ImageButton
+                android:layout_width="65dp"
+                android:layout_height="50dp"
+                android:id="@+id/overflowBtn"
+                android:contentDescription="overflowbtn"
+                android:src="@drawable/overflow_icon"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
+                android:scaleType="fitCenter"
+                android:layout_centerVertical="true"
+                android:background="@null"
+                android:padding="9dp"
+                android:tint="#B1B1B1" />
+
+        </RelativeLayout>
+
+</LinearLayout>
