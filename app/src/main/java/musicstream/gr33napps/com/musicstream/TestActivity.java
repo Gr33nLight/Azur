@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.speech.RecognizerIntent;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
@@ -76,7 +77,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            if (seekBar != null && currentTime != null && player != null) {
+                            if (seekBar != null && currentTime != null && player != null && player.isPlaying()) {
                                 seekBar.setProgress((int) (((float) player.getCurrentPosition() / lengthms) * 100));
                                 updateTime();
                             }
@@ -117,6 +118,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         setReqListener(request);
         request.start();
         player = new MediaPlayer();
+        player.setAudioStreamType(AudioManager.STREAM_MUSIC);
         player.setOnBufferingUpdateListener(this);
         player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
@@ -132,8 +134,8 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
                 songTitle.setText(currentTitle);
                 artistName.setText(currentArtist);
                 progressBar.setVisibility(View.INVISIBLE);
-                runUpdater();
                 player.start();
+                runUpdater();
             }
         });
         player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
@@ -305,6 +307,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
                     .show();
             return true;
         }
+
         if (itemId == R.id.action_logout) {
             player.reset();
             player.release();
@@ -324,13 +327,26 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onResume() {
         super.onResume();
-        songsDb = new DBHelper(getBaseContext());
+        if (songsDb == null)
+            Toast.makeText(this, "Songsdb null!", Toast.LENGTH_SHORT).show();
+        //@TODO Check this
+        if (player == null)
+            Toast.makeText(this, "Player null!", Toast.LENGTH_SHORT).show();
+
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (player != null) player.release();
+        if (player != null) {
+            Toast.makeText(this, "On destroy", Toast.LENGTH_SHORT).show();
+            player.release();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
     }
 
     @Override
@@ -407,7 +423,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
             currentTitle = title;
             currentArtist = artist;
             utils.currentId = songId;
-            player.setAudioStreamType(AudioManager.STREAM_MUSIC);
             player.setDataSource(mp3);
             player.prepareAsync();
             if (isSearchSelected) utils.updateIndex();

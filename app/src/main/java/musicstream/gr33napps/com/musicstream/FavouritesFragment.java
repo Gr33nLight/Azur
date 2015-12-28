@@ -23,7 +23,6 @@ public class FavouritesFragment extends Fragment{
     private RecyclerView recyclerView;
     private List<VKSong> data = new ArrayList<>();
     private ProgressBar loading;
-    private int i=0; //counter for getSongsFromDB()
 
     public FavouritesFragment() {
         // Required empty public constructor
