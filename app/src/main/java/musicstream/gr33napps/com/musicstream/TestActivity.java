@@ -327,12 +327,10 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onResume() {
         super.onResume();
-        if (songsDb == null)
+        if (songsDb == null){
             Toast.makeText(this, "Songsdb null!", Toast.LENGTH_SHORT).show();
-        //@TODO Check this
-        if (player == null)
-            Toast.makeText(this, "Player null!", Toast.LENGTH_SHORT).show();
-
+            songsDb = new DBHelper(getBaseContext());
+        }
     }
 
     @Override
