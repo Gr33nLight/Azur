@@ -20,6 +20,7 @@ public class DBHelper extends SQLiteOpenHelper {
                     FeedEntry.COLUMN_NAME_ID + TEXT_TYPE + COMMA_SEP +
                     FeedEntry.COLUMN_NAME_OWNID + TEXT_TYPE + COMMA_SEP +
                     FeedEntry.COLUMN_NAME_TITLE + TEXT_TYPE + COMMA_SEP +
+                    FeedEntry.COLUMN_NAME_MP3 + TEXT_TYPE + COMMA_SEP +
                     FeedEntry.COLUMN_NAME_ARTIST + TEXT_TYPE +
             " )";
     private static final String SQL_DELETE_ENTRIES =
@@ -49,5 +50,7 @@ public class DBHelper extends SQLiteOpenHelper {
         public static final String COLUMN_NAME_OWNID = "ownid";
         public static final String COLUMN_NAME_TITLE = "title";
         public static final String COLUMN_NAME_ARTIST = "artist";
+        public static final String COLUMN_NAME_MP3 = "mp3";
+
     }
 }

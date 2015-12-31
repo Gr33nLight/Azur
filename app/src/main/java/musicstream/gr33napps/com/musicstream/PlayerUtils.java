@@ -49,7 +49,7 @@ public class PlayerUtils {
     public PlayerUtils(Context c){
         this.c=(TestActivity) c;
     }
-
+/*
     public void nextSong() {
         VkAudioArray songsList = s.getAdapter().getSongs();
         Log.d(TAG, "Next song" + previousIndex);
@@ -262,7 +262,7 @@ public class PlayerUtils {
                 outChannel.close();
         }
     }
-
+*/
 
 
 }

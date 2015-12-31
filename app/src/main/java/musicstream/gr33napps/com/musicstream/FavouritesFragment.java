@@ -53,8 +53,9 @@ public class FavouritesFragment extends Fragment{
     }
 
 
-    public void getSongsFromDB() {
+    public List<VKSong>  getSongsFromDB() {
         data.clear();
+
         // Select All Query
         String selectQuery = "SELECT  * FROM songs";
         SQLiteDatabase db = ((TestActivity) getActivity()).getReadDB();
@@ -62,16 +63,22 @@ public class FavouritesFragment extends Fragment{
         // looping through all rows and adding to list
         if (cursor.moveToFirst()) {
             do {
-                String id = cursor.getString(1);
-                String ownid = cursor.getString(2);
-                String title = cursor.getString(3);
-                String artist =  cursor.getString(4);
-                data.add(new VKSong(title,artist,id,ownid));
+                System.out.println(cursor.toString());
+                String id = cursor.getString(cursor.getColumnIndex("id"));
+                String ownid = cursor.getString(cursor.getColumnIndex("ownid"));
+                String title = cursor.getString(cursor.getColumnIndex("title"));
+                String artist =  cursor.getString(cursor.getColumnIndex("artist"));
+
+                String mp3 =  cursor.getString(cursor.getColumnIndex("mp3"));
+                Song s = new Song(title,artist,mp3,id,ownid);
+                System.out.println("added song:" + s.toString());
+                data.add(s);
             } while (cursor.moveToNext());
             adapter.setSongs(data);
             adapter.notifyDataSetChanged();
         }
         db.close();
+        return data;
     }
 
     public void setNewAudioData() {

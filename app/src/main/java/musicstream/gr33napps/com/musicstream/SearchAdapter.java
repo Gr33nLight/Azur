@@ -78,6 +78,8 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SongViewHo
             songViewHolder.title.setTextColor(Color.GRAY);
             songViewHolder.artist.setTextColor(Color.GRAY);
         }
+
+        songViewHolder.i = i;
     }
 
 
@@ -98,7 +100,7 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SongViewHo
         String mp3, vkid, ownid;
         RelativeLayout songLayout;
         ImageButton overflowBtn;
-
+        Integer i;
         SongViewHolder(View itemView) {
             super(itemView);
             itemView.setClickable(true);
@@ -114,6 +116,7 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SongViewHo
                 }
             });
             songLayout.setOnClickListener(this);
+
         }
 
 
@@ -124,7 +127,8 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SongViewHo
             selectedPos = getLayoutPosition();
             Log.d(TAG, "selectedPos" + selectedPos);
             mainActivityRef.isSearchSelected = true;
-            mainActivityRef.playSong(mp3, title.getText().toString(), artist.getText().toString(), vkid);
+            mainActivityRef.songPicked(selectedPos);
+            //mainActivityRef.playSong(mp3, title.getText().toString(), artist.getText().toString(), vkid);
         }
 
 
@@ -148,7 +152,9 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SongViewHo
 
                 @Override
                 public void onClick(View v) {
-                    mainActivityRef.addSongToDb(new VKSong(title.getText().toString(), artist.getText().toString(), vkid, ownid));
+                    VKSong song = new VKSong(title.getText().toString(), artist.getText().toString(),mp3, vkid, ownid);
+                    mainActivityRef.addSongToDb(song);
+                    System.out.println(song.getMp3());
                     Toast.makeText(mainActivityRef, "Added to favourites", Toast.LENGTH_SHORT).show();
                     mBottomSheetDialog.dismiss();
                 }
@@ -160,7 +166,7 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SongViewHo
                 public void onClick(View v) {
                     Toast.makeText(mainActivityRef, "Downloading...", Toast.LENGTH_SHORT).show();
                     mainActivityRef.isSearchSelected = false;
-                    utils.downLoadFromUrl(mp3, title.getText().toString(), artist.getText().toString());
+                    //utils.downLoadFromUrl(mp3, title.getText().toString(), artist.getText().toString());
                     mBottomSheetDialog.dismiss();
                 }
             });

@@ -1,13 +1,19 @@
 package musicstream.gr33napps.com.musicstream;
 
+import android.content.ComponentName;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.database.sqlite.SQLiteDatabase;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.nfc.Tag;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.PowerManager;
+import android.provider.MediaStore;
 import android.speech.RecognizerIntent;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
@@ -38,21 +44,24 @@ import com.vk.sdk.api.VKParameters;
 import com.vk.sdk.api.VKRequest;
 import com.vk.sdk.api.VKRequest.VKRequestListener;
 import com.vk.sdk.api.VKResponse;
+import com.vk.sdk.api.model.VKApiAudio;
 import com.vk.sdk.api.model.VkAudioArray;
+
+import junit.framework.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class TestActivity extends AppCompatActivity implements View.OnTouchListener, MediaPlayer.OnBufferingUpdateListener /*AudioManager.OnAudioFocusChangeListener*/ {
+public class TestActivity extends AppCompatActivity implements View.OnTouchListener {
 
     private static final String TAG = "Gr33nDebug";
     private ImageView playpause, fwd, bwd;
     private TextView songTitle, artistName, totalTime, currentTime;
     private ProgressBar progressBar;
     private SeekBar seekBar;
-    private MediaPlayer player;
+
     public String currentTitle = "", currentArtist = "";
     public static boolean prevPlayed = false;
     public static int lengthms, seekpos = 0;
@@ -68,38 +77,148 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     private SQLiteDatabase db;
     public PlayerUtils utils;
     public boolean isSearchSelected = true;
+    private Intent playIntent;
+    private MusicService musicSrv;
+    private boolean musicBound;
+    private MediaPlayer player;
+    private TestActivity act;
+    private Updater updater;
 
-    private void runUpdater() {
-        new Thread() {
-            @Override
-            public void run() {
-                while (seekBar.getProgress() <= 100) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (seekBar != null && currentTime != null && player != null && player.isPlaying()) {
-                                seekBar.setProgress((int) (((float) player.getCurrentPosition() / lengthms) * 100));
-                                updateTime();
-                            }
-                        }
-                    });
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+    //connect to the service
+    private ServiceConnection musicConnection = new ServiceConnection(){
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            MusicService.MusicBinder binder = (MusicService.MusicBinder)service;
+            //get service
+            musicSrv = binder.getService();
+            //pass list
+            musicSrv.setSongs(data);
+            //pass fav list
+            musicSrv.setFavSongs(favs.getSongsFromDB());
+            musicBound = true;
+
+            Log.d(TAG, "binded!");
+            musicSrv.setMainInterface(act);
+
+            musicSrv.getPlayer().setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(MediaPlayer mp) {
+                    adapter.notifyDataSetChanged();
+                    if (updater != null)
+                    updater.ferma();
+                    lengthms = musicSrv.getPlayer().getDuration();
+                    totalTime.setText(String.format("%02d:%02d",
+                            TimeUnit.MILLISECONDS.toMinutes(lengthms),
+                            TimeUnit.MILLISECONDS.toSeconds(lengthms) -
+                                    TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(lengthms))
+                    ));
+                    playpause.setImageResource(R.drawable.ic_pause);
+                    songTitle.setText(currentTitle);
+                    artistName.setText(currentArtist);
+                    progressBar.setVisibility(View.INVISIBLE);
+                    musicSrv.getPlayer().start();
+                    player = musicSrv.getPlayer();
+                    runUpdater();
                 }
-            }
-        }.start();
+            });
+            musicSrv.getPlayer().setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mediaPlayer) {
+                    if (isSearchSelected)
+                    musicSrv.nextSong(true);
+                    else
+                        musicSrv.nextSong(false);
+
+                }
+
+            });
+
+            musicSrv.getPlayer().setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
+                @Override
+                public void onBufferingUpdate(MediaPlayer mp, int percent) {
+                    seekBar.setSecondaryProgress(percent);
+                }
+            });
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            musicBound = false;
+        }
+    };
+
+    public void playCallBack(VKApiAudio song){
+        Log.d(TAG, song.artist + " " + song.title);
+        currentTitle = song.title;
+        currentArtist = song.artist;
+
+        playpause.setImageResource(R.drawable.ic_pause);
+        songTitle.setText(currentTitle);
+        artistName.setText(currentArtist);
+        progressBar.setVisibility(View.INVISIBLE);
+
     }
 
-    private void updateTime() {
-        int total = player.getCurrentPosition();
-        currentTime.setText(String.format("%d:%02d",
-                TimeUnit.MILLISECONDS.toMinutes(total),
-                TimeUnit.MILLISECONDS.toSeconds(total) -
-                        TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(total))
-        ));
+    public void songPicked(int pos){
+
+            playerLayout.setVisibility(View.VISIBLE);
+            progressBar.setVisibility(View.VISIBLE);
+
+            musicSrv.setSong(pos, isSearchSelected);
+            if (isSearchSelected)
+                musicSrv.playSong(true);
+            else{
+
+                musicSrv.playSong(false);
+            }
+            prevPlayed = true;
+
+    }
+
+
+
+    class Updater extends Thread {
+
+        boolean running=true;
+        @Override
+        public void run() {
+            while (seekBar.getProgress() <= 100 && running) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (seekBar != null && currentTime != null  ) {
+                                seekBar.setProgress((int) (((float) player.getCurrentPosition() / lengthms) * 100));
+
+                                int total = player.getCurrentPosition();
+                                currentTime.setText(String.format("%d:%02d",
+                                        TimeUnit.MILLISECONDS.toMinutes(total),
+                                        TimeUnit.MILLISECONDS.toSeconds(total) -
+                                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(total))
+                                ));
+
+                            }
+                        } catch (IllegalStateException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        public void ferma(){
+            running = false;
+        }
+    }
+    private void runUpdater() {
+          updater = new Updater();
+          updater.start();
     }
 
 
@@ -107,6 +226,10 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
+
+        s = new SearchFragment();
+        favs = new FavouritesFragment();
+        act = this;
         songsDb = new DBHelper(getBaseContext());
         adapter = new SearchAdapter(data, this);
         initGUI();
@@ -117,39 +240,44 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         request.addExtraParameter("count", 150);
         setReqListener(request);
         request.start();
-        player = new MediaPlayer();
+        playpause.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                togglePlayback();
+            }
+        });
+        fwd.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                if (isSearchSelected)
+                    musicSrv.nextSong(true);
+                else
+                    musicSrv.nextSong(false);
+            }
+        });
+        bwd.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (isSearchSelected)
+                    musicSrv.prevSong(true);
+                else
+                    musicSrv.prevSong(false);
+
+            }
+        });
+
+
+       /* player = new MediaPlayer();
         player.setAudioStreamType(AudioManager.STREAM_MUSIC);
         player.setOnBufferingUpdateListener(this);
-        player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-            @Override
-            public void onPrepared(MediaPlayer mp) {
-                adapter.notifyDataSetChanged();
-                lengthms = player.getDuration();
-                totalTime.setText(String.format("%02d:%02d",
-                        TimeUnit.MILLISECONDS.toMinutes(lengthms),
-                        TimeUnit.MILLISECONDS.toSeconds(lengthms) -
-                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(lengthms))
-                ));
-                playpause.setImageResource(R.drawable.ic_pause);
-                songTitle.setText(currentTitle);
-                artistName.setText(currentArtist);
-                progressBar.setVisibility(View.INVISIBLE);
-                player.start();
-                runUpdater();
-            }
-        });
-        player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mediaPlayer) {
-                utils.nextSong();
-            }
-        });
+          */
         searchView.setOnQueryTextListener(new MaterialSearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 s.getAdapter().notifyDataSetChanged();
                 data.clear();
-                utils.resetIndexes();
+               // utils.resetIndexes();
                 s.showLoading();
                 request = VKApi.audio().search(VKParameters.from("q", query, "only_eng", "1"));
                 request.addExtraParameter("count", 150);
@@ -164,30 +292,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
                 return false;
             }
         });
-        playpause.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                togglePlayback();
-            }
-        });
-        fwd.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (isSearchSelected)
-                    utils.nextSong();
-                else
-                    utils.nextSongFavs();
-            }
-        });
-        bwd.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (isSearchSelected)
-                    utils.prevSong();
-                else
-                    utils.prevSongFavs();
-            }
-        });
+
     }//onCreate
 
 
@@ -203,10 +308,11 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         db = songsDb.getWritableDatabase();
 // Create a new map of values, where column names are the keys
         ContentValues values = new ContentValues();
-        values.put(DBHelper.FeedEntry.COLUMN_NAME_ID, song.id);
-        values.put(DBHelper.FeedEntry.COLUMN_NAME_OWNID, song.ownid);
-        values.put(DBHelper.FeedEntry.COLUMN_NAME_TITLE, song.title);
-        values.put(DBHelper.FeedEntry.COLUMN_NAME_ARTIST, song.artist);
+        values.put(DBHelper.FeedEntry.COLUMN_NAME_ID, song.getId());
+        values.put(DBHelper.FeedEntry.COLUMN_NAME_OWNID, song.getOwnid());
+        values.put(DBHelper.FeedEntry.COLUMN_NAME_MP3, song.getMp3());
+        values.put(DBHelper.FeedEntry.COLUMN_NAME_TITLE, song.getTitle());
+        values.put(DBHelper.FeedEntry.COLUMN_NAME_ARTIST, song.getArtist());
 // Insert the new row, returning the primary key value of the new row
         db.insert(
                 DBHelper.FeedEntry.TABLE_NAME, null,
@@ -243,12 +349,12 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-                player.pause();
+                musicSrv.getPlayer().pause();
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                player.start();
+                musicSrv.getPlayer().start();
             }
         });
         searchView = (MaterialSearchView) findViewById(R.id.search_view);
@@ -261,16 +367,54 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         progressBar.setVisibility(View.INVISIBLE);
         playpause.setImageResource(R.drawable.ic_play);
     }
+    public void togglePlayback() {
+        if (!(musicSrv.getPlayer().isPlaying()) && prevPlayed) {
+            playpause.setImageResource(R.drawable.ic_pause);
+            musicSrv.play();
+        } else if (musicSrv.getPlayer().isPlaying()) {
+            playpause.setImageResource(R.drawable.ic_play);
+           musicSrv.pause();
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if(playIntent==null){
+            playIntent = new Intent(this, MusicService.class);
+            bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
+            startService(playIntent);
+        }
+    }
 
     private void setupViewPager(ViewPager viewPager) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
-        s = new SearchFragment();
-        favs = new FavouritesFragment();
         adapter.addFragment(s, "SEARCH");
         adapter.addFragment(favs, "MY MUSIC");
         viewPager.setAdapter(adapter);
         tabLayout.setupWithViewPager(viewPager);
+        tabLayout.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                if (tab.getText().equals("MY MUSIC") && musicSrv != null)
+                    musicSrv.setFavSongs(favs.getSongsFromDB());
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+                if (tab.getText().equals("MY MUSIC") && musicSrv != null)
+                    musicSrv.setFavSongs(favs.getSongsFromDB());
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+                if (tab.getText().equals("MY MUSIC") && musicSrv != null)
+                    musicSrv.setFavSongs(favs.getSongsFromDB());
+            }
+        });
     }
+
+
 
     private void setReqListener(VKRequest request) {
         request.setRequestListener(new VKRequestListener() {
@@ -309,9 +453,9 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         }
 
         if (itemId == R.id.action_logout) {
-            player.reset();
+           /* player.reset();
             player.release();
-
+*/
             VKSdk.logout();
             if (!VKSdk.isLoggedIn()) {
                 Intent i = new Intent(this, LoginActivity.class);
@@ -336,10 +480,10 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (player != null) {
-            Toast.makeText(this, "On destroy", Toast.LENGTH_SHORT).show();
-            player.release();
-        }
+
+       unbindService(musicConnection);
+        musicSrv=null;
+
     }
 
     @Override
@@ -359,11 +503,14 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
 
     @Override
     public void onBackPressed() {
+
         if (searchView.isSearchOpen()) {
             searchView.closeSearch();
         } else {
             super.onBackPressed();
         }
+        if (updater!= null)
+        updater.ferma();
     }
 
     @Override
@@ -385,31 +532,23 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
 
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
+
         if (view.getId() == R.id.seekBar) {
-            if (player != null) {
+            if (musicSrv.getPlayer() != null) {
                 SeekBar sb = (SeekBar) view;
                 seekpos = (lengthms / 100) * sb.getProgress();
-                player.seekTo(seekpos);
+                musicSrv.getPlayer().seekTo(seekpos);
             }
         }
         return false;
     }
-
+/*
     @Override
     public void onBufferingUpdate(MediaPlayer mediaPlayer, int i) {
         seekBar.setSecondaryProgress(i);
     }
 
 
-    public void togglePlayback() {
-        if (!(player.isPlaying()) && prevPlayed) {
-            playpause.setImageResource(R.drawable.ic_pause);
-            player.start();
-        } else if (player.isPlaying()) {
-            playpause.setImageResource(R.drawable.ic_play);
-            player.pause();
-        }
-    }
 
     public void playSong(String mp3, String title, String artist, String songId) {
 
@@ -435,7 +574,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         }
 
 
-    }
+    }*/
 
     //
 //    @Override

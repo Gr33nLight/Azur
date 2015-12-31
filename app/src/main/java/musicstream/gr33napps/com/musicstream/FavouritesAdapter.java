@@ -43,6 +43,7 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.So
         this.songs = songs;
         mainActivityRef = (TestActivity) c;
         q = new CocoQuery(mainActivityRef);
+
     }
 
 //    private void primarySeekBarProgressUpdater() {
@@ -129,6 +130,7 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.So
 
         @Override
         public void onClick(View view) {
+            final View myView = view;
             notifyItemChanged(selectedPos);
             mainActivityRef.isSearchSelected = false;
             notifyDataSetChanged();
@@ -146,7 +148,8 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.So
                         mp3 = jsonobject.getString("url");
                         String title = jsonobject.getString("title");
                         String artist = jsonobject.getString("artist");
-                        mainActivityRef.playSong(mp3, title, artist, vkid);
+                        mainActivityRef.songPicked(selectedPos);
+                       // mainActivityRef.playSong(mp3, title, artist, vkid);
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -204,7 +207,7 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.So
                                 jsonarray = out.getJSONArray("response");
                                 JSONObject jsonobject = jsonarray.getJSONObject(0);
                                 mp3 = jsonobject.getString("url");
-                                utils.downLoadFromUrl(mp3, title.getText().toString(), artist.getText().toString());
+                                //utils.downLoadFromUrl(mp3, title.getText().toString(), artist.getText().toString());
                             } catch (JSONException e) {
                                 e.printStackTrace();
                             }
