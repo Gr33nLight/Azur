@@ -1,5 +1,7 @@
 package musicstream.gr33napps.com.musicstream;
 
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
@@ -83,15 +85,17 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     private MediaPlayer player;
     private TestActivity act;
     private Updater updater;
+    private int favPos;
 
     //connect to the service
-    private ServiceConnection musicConnection = new ServiceConnection(){
+    private ServiceConnection musicConnection = new ServiceConnection() {
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            MusicService.MusicBinder binder = (MusicService.MusicBinder)service;
+            MusicService.MusicBinder binder = (MusicService.MusicBinder) service;
             //get service
             musicSrv = binder.getService();
+            musicSrv.start();
             //pass list
             musicSrv.setSongs(data);
             //pass fav list
@@ -105,8 +109,22 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
                 @Override
                 public void onPrepared(MediaPlayer mp) {
                     adapter.notifyDataSetChanged();
+                    if (isSearchSelected){
+                        VKApiAudio audio = musicSrv.getCurrentSong();
+                        currentArtist = audio.artist;
+                        currentTitle = audio.title;
+
+                    }else{
+                        VKSong favSong = musicSrv.getCurrentFavSong();
+                        currentArtist = favSong.artist;
+                        currentTitle =favSong.title;
+                    }
+
+
+                    playpause.setImageResource(R.drawable.ic_pause);
+
                     if (updater != null)
-                    updater.ferma();
+                        updater.ferma();
                     lengthms = musicSrv.getPlayer().getDuration();
                     totalTime.setText(String.format("%02d:%02d",
                             TimeUnit.MILLISECONDS.toMinutes(lengthms),
@@ -119,6 +137,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
                     progressBar.setVisibility(View.INVISIBLE);
                     musicSrv.getPlayer().start();
                     player = musicSrv.getPlayer();
+
                     runUpdater();
                 }
             });
@@ -126,7 +145,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
                 @Override
                 public void onCompletion(MediaPlayer mediaPlayer) {
                     if (isSearchSelected)
-                    musicSrv.nextSong(true);
+                        musicSrv.nextSong(true);
                     else
                         musicSrv.nextSong(false);
 
@@ -148,39 +167,46 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         }
     };
 
-    public void playCallBack(VKApiAudio song){
+    public void playCallBack(VKApiAudio song) {
         Log.d(TAG, song.artist + " " + song.title);
         currentTitle = song.title;
         currentArtist = song.artist;
 
-        playpause.setImageResource(R.drawable.ic_pause);
-        songTitle.setText(currentTitle);
-        artistName.setText(currentArtist);
-        progressBar.setVisibility(View.INVISIBLE);
+
+        songTitle.setText("");
+        artistName.setText("");
+       // progressBar.setVisibility(View.INVISIBLE);
 
     }
 
-    public void songPicked(int pos){
+    public void songPicked(int pos) {
 
-            playerLayout.setVisibility(View.VISIBLE);
-            progressBar.setVisibility(View.VISIBLE);
 
-            musicSrv.setSong(pos, isSearchSelected);
-            if (isSearchSelected)
-                musicSrv.playSong(true);
-            else{
+        playpause.setImageResource(R.drawable.ic_play);
+        playerLayout.setVisibility(View.VISIBLE);
+        progressBar.setVisibility(View.VISIBLE);
 
-                musicSrv.playSong(false);
-            }
-            prevPlayed = true;
+        musicSrv.setSong(pos, isSearchSelected);
+        if (isSearchSelected) {
+            favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
+            favs.getAdapter().setSelectedPos(-1);
+            favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
+            musicSrv.playSong(true);
+        } else {
+            s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
+            s.getAdapter().setSelectedPos(-1);
+            s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
+            musicSrv.playSong(false);
+        }
+        prevPlayed = true;
 
     }
-
 
 
     class Updater extends Thread {
 
-        boolean running=true;
+        boolean running = true;
+
         @Override
         public void run() {
             while (seekBar.getProgress() <= 100 && running) {
@@ -188,7 +214,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
                     @Override
                     public void run() {
                         try {
-                            if (seekBar != null && currentTime != null  ) {
+                            if (seekBar != null && currentTime != null) {
                                 seekBar.setProgress((int) (((float) player.getCurrentPosition() / lengthms) * 100));
 
                                 int total = player.getCurrentPosition();
@@ -212,20 +238,22 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
             }
         }
 
-        public void ferma(){
+        public void ferma() {
             running = false;
         }
     }
+
     private void runUpdater() {
-          updater = new Updater();
-          updater.start();
+       updater = new Updater();
+        updater.start();
     }
 
-
+    final static int myID = 1234;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
+
 
         s = new SearchFragment();
         favs = new FavouritesFragment();
@@ -249,20 +277,43 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         fwd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                progressBar.setVisibility(View.VISIBLE);
+                playpause.setImageResource(R.drawable.ic_play);
+                if (isSearchSelected) {
 
-                if (isSearchSelected)
                     musicSrv.nextSong(true);
-                else
+                    s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
+                    s.getAdapter().setSelectedPos(musicSrv.getSongPosn());
+                    s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
+
+                } else {
                     musicSrv.nextSong(false);
+
+                    favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
+                    favs.getAdapter().setSelectedPos(musicSrv.getSongFavPosn());
+                    favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
+                }
+
             }
         });
         bwd.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View view) {
-                if (isSearchSelected)
+                playpause.setImageResource(R.drawable.ic_play);
+
+                progressBar.setVisibility(View.VISIBLE);
+                if (isSearchSelected) {
                     musicSrv.prevSong(true);
-                else
+                    s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
+                    s.getAdapter().setSelectedPos(musicSrv.getSongPosn());
+                    s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
+                } else{
                     musicSrv.prevSong(false);
+                    favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
+                    favs.getAdapter().setSelectedPos(musicSrv.getSongFavPosn());
+                    favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
+                }
 
             }
         });
@@ -277,7 +328,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
             public boolean onQueryTextSubmit(String query) {
                 s.getAdapter().notifyDataSetChanged();
                 data.clear();
-               // utils.resetIndexes();
+                // utils.resetIndexes();
                 s.showLoading();
                 request = VKApi.audio().search(VKParameters.from("q", query, "only_eng", "1"));
                 request.addExtraParameter("count", 150);
@@ -367,23 +418,24 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         progressBar.setVisibility(View.INVISIBLE);
         playpause.setImageResource(R.drawable.ic_play);
     }
+
     public void togglePlayback() {
         if (!(musicSrv.getPlayer().isPlaying()) && prevPlayed) {
             playpause.setImageResource(R.drawable.ic_pause);
             musicSrv.play();
         } else if (musicSrv.getPlayer().isPlaying()) {
             playpause.setImageResource(R.drawable.ic_play);
-           musicSrv.pause();
+            musicSrv.pause();
         }
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        if(playIntent==null){
+        if (playIntent == null) {
             playIntent = new Intent(this, MusicService.class);
             bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
-            startService(playIntent);
+
         }
     }
 
@@ -393,27 +445,26 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         adapter.addFragment(favs, "MY MUSIC");
         viewPager.setAdapter(adapter);
         tabLayout.setupWithViewPager(viewPager);
-        tabLayout.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
-                if (tab.getText().equals("MY MUSIC") && musicSrv != null)
-                    musicSrv.setFavSongs(favs.getSongsFromDB());
-            }
-
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
-                if (tab.getText().equals("MY MUSIC") && musicSrv != null)
-                    musicSrv.setFavSongs(favs.getSongsFromDB());
-            }
-
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) {
-                if (tab.getText().equals("MY MUSIC") && musicSrv != null)
-                    musicSrv.setFavSongs(favs.getSongsFromDB());
-            }
-        });
+//        tabLayout.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+//            @Override
+//            public void onTabSelected(TabLayout.Tab tab) {
+//                if (tab.getText().equals("MY MUSIC") && musicSrv != null)
+//                    musicSrv.setFavSongs(favs.getSongsFromDB());
+//            }
+//
+//            @Override
+//            public void onTabUnselected(TabLayout.Tab tab) {
+//                if (tab.getText().equals("MY MUSIC") && musicSrv != null)
+//                    musicSrv.setFavSongs(favs.getSongsFromDB());
+//            }
+//
+//            @Override
+//            public void onTabReselected(TabLayout.Tab tab) {
+//                if (tab.getText().equals("MY MUSIC") && musicSrv != null)
+//                    musicSrv.setFavSongs(favs.getSongsFromDB());
+//            }
+//        });
     }
-
 
 
     private void setReqListener(VKRequest request) {
@@ -425,6 +476,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
                     data.add(dataFetched.get(i));
                 Log.d(TAG, "onComplete");
                 s.setNewAudioData(data);
+                Log.e(TAG,"data :"+data.toString());
                 s.getAdapter().notifyDataSetChanged();
             }
 
@@ -471,18 +523,16 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onResume() {
         super.onResume();
-        if (songsDb == null){
-            Toast.makeText(this, "Songsdb null!", Toast.LENGTH_SHORT).show();
-            songsDb = new DBHelper(getBaseContext());
-        }
+        songsDb = new DBHelper(getBaseContext());
+
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
-       unbindService(musicConnection);
-        musicSrv=null;
+        updater.ferma();
+        unbindService(musicConnection);
+        musicSrv = null;
 
     }
 
@@ -509,8 +559,8 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         } else {
             super.onBackPressed();
         }
-        if (updater!= null)
-        updater.ferma();
+        if (updater != null)
+            updater.ferma();
     }
 
     @Override

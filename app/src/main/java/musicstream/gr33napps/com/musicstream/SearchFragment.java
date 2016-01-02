@@ -29,7 +29,9 @@ public class SearchFragment extends Fragment{
         adapter = new SearchAdapter(data, getContext());
 
     }
-
+    public RecyclerView getRecyclerView() {
+        return recyclerView;
+    }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -42,7 +44,6 @@ public class SearchFragment extends Fragment{
         RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getContext());
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setAdapter(adapter);
-        recyclerView.setHasFixedSize(true);
         return v;
     }
 

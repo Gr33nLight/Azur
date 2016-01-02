@@ -32,7 +32,7 @@ public class FavouritesFragment extends Fragment{
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         adapter = new FavouritesAdapter(data, getContext());
-        getSongsFromDB();
+        //getSongsFromDB();
     }
 
     @Override
@@ -52,6 +52,9 @@ public class FavouritesFragment extends Fragment{
         return v;
     }
 
+    public RecyclerView getRecyclerView() {
+        return recyclerView;
+    }
 
     public List<VKSong>  getSongsFromDB() {
         data.clear();

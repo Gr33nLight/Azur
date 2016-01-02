@@ -1,7 +1,13 @@
 package musicstream.gr33napps.com.musicstream;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
+import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Binder;
@@ -9,6 +15,7 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.vk.sdk.api.model.VKApiAudio;
 import com.vk.sdk.api.model.VkAudioArray;
@@ -21,9 +28,6 @@ import java.util.List;
 
 import static android.media.MediaPlayer.*;
 
-/**
- * Created by W8 on 29/12/2015.
- */
 public class MusicService extends Service implements
         OnPreparedListener, OnErrorListener,
         OnCompletionListener {
@@ -40,7 +44,23 @@ public class MusicService extends Service implements
     //current position fav songs
     private int songFavPosn;
 
+    private VKSong favSong;
+
+    public IBinder getMusicBind() {
+        return musicBind;
+    }
+
+
+    public int getSongPosn() {
+        return songPosn;
+    }
+
+    public int getSongFavPosn() {
+        return songFavPosn;
+    }
+
     private TestActivity mainInterface;
+    private boolean search;
 
     public void setSongs(VkAudioArray songs) {
         this.songs = songs;
@@ -53,6 +73,29 @@ public class MusicService extends Service implements
         Log.d(TAG, "Size:"  + songs.size());
     }
 
+    public void start(){
+        Intent notificationIntent = new Intent(getApplicationContext(), TestActivity.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(),
+                1234, notificationIntent,
+                PendingIntent.FLAG_CANCEL_CURRENT);
+
+        NotificationManager nm = (NotificationManager) getApplicationContext()
+                .getSystemService(Context.NOTIFICATION_SERVICE);
+
+        Resources res = getApplicationContext().getResources();
+        Notification.Builder builder = new Notification.Builder(getApplicationContext());
+
+        builder.setContentIntent(contentIntent)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setLargeIcon(BitmapFactory.decodeResource(res, R.mipmap.ic_launcher))
+                .setTicker("AzureMusic")
+                .setWhen(System.currentTimeMillis())
+                .setAutoCancel(true)
+                .setContentTitle("AzureMusic")
+                .setContentText("AzureMusic");
+        Notification n = builder.build();
+        startForeground(1234,n);
+    }
     public class MusicBinder extends Binder {
         MusicService getService() {
             return MusicService.this;
@@ -70,9 +113,9 @@ public class MusicService extends Service implements
     public void initMusicPlayer() {
         player = new MediaPlayer();
         //set player properties
-        player.setWakeMode(getApplicationContext(),
-                PowerManager.PARTIAL_WAKE_LOCK);
         player.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        //player.setWakeMode(getApplicationContext(),
+        //        PowerManager.PARTIAL_WAKE_LOCK);
         player.setOnPreparedListener(this);
         player.setOnCompletionListener(this);
         player.setOnErrorListener(this);
@@ -97,37 +140,56 @@ public class MusicService extends Service implements
     public void play(){
         player.start();
     }
+    private VKApiAudio currentSong;
+
+    public VKApiAudio getCurrentSong() {
+        return currentSong;
+    }
+
+    public VKSong getCurrentFavSong() {
+        return favSong;
+    }
+
     public void playSong(boolean search) {
+        Log.e(TAG, "called from search " + search);
+        this.search = search;
 
         //play a song
         player.reset();
         VKApiAudio song = songs.get(songPosn);
-        int currSong = songPosn;
+        currentSong = song;
         try {
             if (search) {
-                player.setDataSource(song.url.toString());
-            }else{
-                Log.d(TAG, "Play from favs pos:"+songPosn +" " + favSongs.get(songFavPosn).getMp3());
+                player.setDataSource(song.url);
+                mainInterface.playCallBack(song);
+            }else {
+                favSong =  favSongs.get(songFavPosn);
+                Log.d(TAG, "Play from favs pos:" + songPosn + " " + favSongs.get(songFavPosn).getMp3());
                 player.setDataSource(favSongs.get(songFavPosn).getMp3());
+                VKSong favSong = favSongs.get(songFavPosn);
+                VKApiAudio finalSong = new VKApiAudio();
+                finalSong.artist = favSong.getArtist();
+                finalSong.title = favSong.getTitle();
+                finalSong.url = favSong.getMp3();
+
+                mainInterface.playCallBack(finalSong);
 
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
         player.prepareAsync();
 
-        if (search)
-            mainInterface.playCallBack(song);
-        else{
-            VKSong favSong = favSongs.get(songFavPosn);
-            VKApiAudio finalSong = new VKApiAudio();
-            finalSong.artist = favSong.getArtist();
-            finalSong.title = favSong.getTitle();
-            finalSong.url = favSong.getMp3();
 
-            mainInterface.playCallBack(finalSong);
-        }
 
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        Toast.makeText(getApplicationContext(), "go and fuck yourself", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -156,7 +218,6 @@ public class MusicService extends Service implements
 
     @Override
     public void onPrepared(MediaPlayer mp) {
-        mp.start();
 
 
     }
