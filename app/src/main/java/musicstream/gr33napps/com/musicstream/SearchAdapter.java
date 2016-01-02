@@ -66,8 +66,8 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SongViewHo
 //        for (int c = 0; c < songs.size(); c++) {
 //            Log.d("SongList", songs.get(c).title);
 //        }
-        songViewHolder.title.setText(songs.get(i).title);
-        songViewHolder.artist.setText(songs.get(i).artist);
+        songViewHolder.title.setText(songs.get(i).title.trim());
+        songViewHolder.artist.setText(songs.get(i).artist.trim());
         songViewHolder.mp3 = songs.get(i).url;
         songViewHolder.vkid = String.valueOf(songs.get(i).getId());
         songViewHolder.ownid = String.valueOf(songs.get(i).owner_id);
