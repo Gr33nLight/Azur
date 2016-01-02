@@ -17,10 +17,19 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.vk.sdk.api.VKApi;
+import com.vk.sdk.api.VKError;
+import com.vk.sdk.api.VKParameters;
+import com.vk.sdk.api.VKRequest;
+import com.vk.sdk.api.VKResponse;
 import com.vk.sdk.api.model.VKApiAudio;
 import com.vk.sdk.api.model.VkAudioArray;
 
 import junit.framework.Test;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,6 +52,8 @@ public class MusicService extends Service implements
     private int songPosn;
     //current position fav songs
     private int songFavPosn;
+
+    private VKRequest request;
 
     private VKSong favSong;
 
@@ -155,24 +166,39 @@ public class MusicService extends Service implements
         this.search = search;
 
         //play a song
-        player.reset();
+
         VKApiAudio song = songs.get(songPosn);
         currentSong = song;
         try {
             if (search) {
+                player.reset();
                 player.setDataSource(song.url);
                 mainInterface.playCallBack(song);
+                player.prepareAsync();
             }else {
+                player.pause();
                 favSong =  favSongs.get(songFavPosn);
                 Log.d(TAG, "Play from favs pos:" + songPosn + " " + favSongs.get(songFavPosn).getMp3());
-                player.setDataSource(favSongs.get(songFavPosn).getMp3());
+                getSongFroId(favSong.ownid, favSong.id, new Callbacks() {
+                    @Override
+                    public void successCallback(String response) throws IOException {
+                        player.reset();
+                        player.setDataSource(response);
+
+                        player.prepareAsync();
+                    }
+
+                    @Override
+                    public void failCallback(String response) {
+
+                    }
+                });
                 VKSong favSong = favSongs.get(songFavPosn);
                 VKApiAudio finalSong = new VKApiAudio();
                 finalSong.artist = favSong.getArtist();
                 finalSong.title = favSong.getTitle();
-                finalSong.url = favSong.getMp3();
-
                 mainInterface.playCallBack(finalSong);
+
 
             }
         } catch (IOException e) {
@@ -180,10 +206,37 @@ public class MusicService extends Service implements
         }
 
 
-        player.prepareAsync();
 
 
 
+
+    }
+    private void getSongFroId(String ownid, String vkid, final Callbacks callback) {
+        request = VKApi.audio().getById(VKParameters.from("audios", ownid + "_" + vkid));
+        Log.d(TAG, "Query: " + ownid + "_" + vkid);
+        request.setRequestListener(new VKRequest.VKRequestListener() {
+            @Override
+            public void onComplete(VKResponse response) {
+                JSONObject out = response.json;
+                JSONArray jsonarray;
+                try {
+                    jsonarray = out.getJSONArray("response");
+                    JSONObject jsonobject = jsonarray.getJSONObject(0);
+                    callback.successCallback(jsonobject.getString("url"));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            @Override
+            public void onError(VKError error) {
+                super.onError(error);
+                Toast.makeText(getApplicationContext(), "Error playing song", Toast.LENGTH_SHORT).show();
+                callback.failCallback("error");
+            }
+        });
+        request.start();
     }
 
     @Override

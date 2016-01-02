@@ -15,6 +15,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.vk.sdk.api.VKRequest;
+import com.vk.sdk.api.VKResponse;
 import com.vk.sdk.api.model.VkAudioArray;
 
 
@@ -152,7 +154,7 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SongViewHo
 
                 @Override
                 public void onClick(View v) {
-                    VKSong song = new VKSong(title.getText().toString(), artist.getText().toString(),mp3, vkid, ownid);
+                    VKSong song = new VKSong(title.getText().toString(), artist.getText().toString(), mp3, vkid, ownid);
                     mainActivityRef.addSongToDb(song);
                     System.out.println(song.getMp3());
                     Toast.makeText(mainActivityRef, "Added to favourites", Toast.LENGTH_SHORT).show();
