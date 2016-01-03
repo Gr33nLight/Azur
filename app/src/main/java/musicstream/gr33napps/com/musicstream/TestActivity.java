@@ -48,10 +48,6 @@ import com.vk.sdk.api.VKRequest.VKRequestListener;
 import com.vk.sdk.api.VKResponse;
 import com.vk.sdk.api.model.VKApiAudio;
 import com.vk.sdk.api.model.VkAudioArray;
-
-import junit.framework.Test;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -530,7 +526,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        updater.ferma();
+
         unbindService(musicConnection);
         musicSrv = null;
 
