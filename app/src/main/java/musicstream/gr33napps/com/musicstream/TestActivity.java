@@ -526,7 +526,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
         unbindService(musicConnection);
         musicSrv = null;
 
