@@ -2,3 +2,8 @@ app/app-release.apk
 build/
 app/build
 .gradle
+.idea/libraries
+*.iml
+*.iws
+.idea/workspace.xml
+local.properties
