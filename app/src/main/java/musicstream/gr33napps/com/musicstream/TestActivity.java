@@ -22,6 +22,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -53,8 +54,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class TestActivity extends AppCompatActivity implements View.OnTouchListener {
-//@TODO highlight song when not touching interface (like when oncompletion is called)
+public class TestActivity extends AppCompatActivity implements View.OnTouchListener, SwipeRefreshLayout.OnRefreshListener {
+
     private static final String TAG = "Gr33nDebug";
     private ImageView playpause, fwd, bwd;
     private TextView songTitle, artistName, totalTime, currentTime;
@@ -82,6 +83,11 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     private TestActivity act;
     private Updater updater;
     private boolean isPrepared = false;
+    private SwipeRefreshLayout swipeRefreshLayout;
+
+
+    //@TODO highlight song when not touching interface (like when oncompletion is called)
+
 
     //connect to the service
     private ServiceConnection musicConnection = new ServiceConnection() {
@@ -166,95 +172,13 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         }
     };
 
-    public void playCallBack(VKApiAudio song) {
-        Log.d(TAG, song.artist + " " + song.title);
-        currentTitle = song.title;
-        currentArtist = song.artist;
 
 
-        songTitle.setText("");
-        artistName.setText("");
-        // progressBar.setVisibility(View.INVISIBLE);
-
-    }
-
-    public void songPicked(int pos) {
-        isPrepared = false;
-
-        playpause.setImageResource(R.drawable.ic_play);
-        playerLayout.setVisibility(View.VISIBLE);
-        progressBar.setVisibility(View.VISIBLE);
-
-        musicSrv.setSong(pos, isSearchSelected);
-        if (isSearchSelected) {
-            favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
-            favs.getAdapter().setSelectedPos(-1);
-            favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
-            musicSrv.playSong(true);
-        } else {
-            s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
-            s.getAdapter().setSelectedPos(-1);
-            s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
-            musicSrv.playSong(false);
-        }
-        prevPlayed = true;
-
-    }
-
-
-    class Updater extends Thread {
-
-        boolean running = true;
-
-        @Override
-        public void run() {
-            while (seekBar.getProgress() <= 100 && running) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            if (seekBar != null && currentTime != null) {
-                                seekBar.setProgress((int) (((float) player.getCurrentPosition() / lengthms) * 100));
-
-                                int total = player.getCurrentPosition();
-                                currentTime.setText(String.format("%d:%02d",
-                                        TimeUnit.MILLISECONDS.toMinutes(total),
-                                        TimeUnit.MILLISECONDS.toSeconds(total) -
-                                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(total))
-                                ));
-
-                            }
-                        } catch (IllegalStateException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        public void ferma() {
-            running = false;
-        }
-    }
-
-    private void runUpdater() {
-        updater = new Updater();
-        updater.start();
-    }
-
-    final static int myID = 1234;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
-
-
         s = new SearchFragment();
         favs = new FavouritesFragment();
         act = this;
@@ -263,10 +187,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         initGUI();
         ViewPager viewPager = (ViewPager) findViewById(R.id.viewpager);
         setupViewPager(viewPager);
-        request = VKApi.audio().getPopular(VKParameters.from("only_eng", "1", "genre_id", "5"));
-        request.addExtraParameter("count", 150);
-        setReqListener(request);
-        request.start();
         playpause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -316,19 +236,12 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
 
             }
         });
-
-
-       /* player = new MediaPlayer();
-        player.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        player.setOnBufferingUpdateListener(this);
-          */
         searchView.setOnQueryTextListener(new MaterialSearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 s.getAdapter().notifyDataSetChanged();
-                data.clear();
+                swipeRefreshLayout.setRefreshing(true);
                 // utils.resetIndexes();
-                s.showLoading();
                 request = VKApi.audio().search(VKParameters.from("q", query, "only_eng", "1"));
                 request.addExtraParameter("count", 150);
                 setReqListener(request);
@@ -345,7 +258,95 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
 
     }//onCreate
 
+    public void playCallBack(VKApiAudio song) {
+        Log.d(TAG, song.artist + " " + song.title);
+        currentTitle = song.title;
+        currentArtist = song.artist;
 
+
+        songTitle.setText("");
+        artistName.setText("");
+        // progressBar.setVisibility(View.INVISIBLE);
+
+    }
+
+    public void songPicked(int pos) {
+        isPrepared = false;
+
+        playpause.setImageResource(R.drawable.ic_play);
+        playerLayout.setVisibility(View.VISIBLE);
+        progressBar.setVisibility(View.VISIBLE);
+
+        musicSrv.setSong(pos, isSearchSelected);
+        if (isSearchSelected) {
+            favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
+            favs.getAdapter().setSelectedPos(-1);
+            favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
+            musicSrv.playSong(true);
+        } else {
+            s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
+            s.getAdapter().setSelectedPos(-1);
+            s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
+            musicSrv.playSong(false);
+        }
+        prevPlayed = true;
+
+    }
+
+    @Override
+    public void onRefresh() {
+        swipeRefreshLayout.setRefreshing(true);
+        request = VKApi.audio().getPopular(VKParameters.from("only_eng", "1", "genre_id", "5"));
+        request.addExtraParameter("count", 150);
+        setReqListener(request);
+        request.start();
+    }
+
+
+    class Updater extends Thread {
+
+        boolean running = true;
+
+        @Override
+        public void run() {
+            while (seekBar.getProgress() <= 100 && running) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (seekBar != null && currentTime != null) {
+                                seekBar.setProgress((int) (((float) player.getCurrentPosition() / lengthms) * 100));
+
+                                int total = player.getCurrentPosition();
+                                currentTime.setText(String.format("%d:%02d",
+                                        TimeUnit.MILLISECONDS.toMinutes(total),
+                                        TimeUnit.MILLISECONDS.toSeconds(total) -
+                                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(total))
+                                ));
+
+                            }
+                        } catch (IllegalStateException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        public void ferma() {
+            running = false;
+        }
+    }
+
+    private void runUpdater() {
+        updater = new Updater();
+        updater.start();
+    }
     public VkAudioArray getData() {
         return data;
     }
@@ -387,6 +388,19 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         currentTime = (TextView) findViewById(R.id.currentTime);
         tabLayout = (TabLayout) findViewById(R.id.tabs);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipe_container);
+        swipeRefreshLayout.setOnRefreshListener(this);
+        swipeRefreshLayout.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        swipeRefreshLayout.setRefreshing(true);
+                                        request = VKApi.audio().getPopular(VKParameters.from("only_eng", "1", "genre_id", "5"));
+                                        request.addExtraParameter("count", 150);
+                                        setReqListener(request);
+                                        request.start();
+                                    }
+                                }
+        );
         setSupportActionBar(toolbar);
         assert getSupportActionBar() != null;
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
@@ -402,8 +416,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
             public void onStartTrackingTouch(SeekBar seekBar) {
 
                 if (musicSrv.getPlayer() != null && isPrepared) {
-                    if (musicSrv.getPlayer().isPlaying()) wasPlaying = true;
-                    else wasPlaying = false;
+                    wasPlaying = musicSrv.getPlayer().isPlaying();
                     musicSrv.getPlayer().pause();
                 }
             }
@@ -450,25 +463,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         adapter.addFragment(favs, "MY MUSIC");
         viewPager.setAdapter(adapter);
         tabLayout.setupWithViewPager(viewPager);
-//        tabLayout.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-//            @Override
-//            public void onTabSelected(TabLayout.Tab tab) {
-//                if (tab.getText().equals("MY MUSIC") && musicSrv != null)
-//                    musicSrv.setFavSongs(favs.getSongsFromDB());
-//            }
-//
-//            @Override
-//            public void onTabUnselected(TabLayout.Tab tab) {
-//                if (tab.getText().equals("MY MUSIC") && musicSrv != null)
-//                    musicSrv.setFavSongs(favs.getSongsFromDB());
-//            }
-//
-//            @Override
-//            public void onTabReselected(TabLayout.Tab tab) {
-//                if (tab.getText().equals("MY MUSIC") && musicSrv != null)
-//                    musicSrv.setFavSongs(favs.getSongsFromDB());
-//            }
-//        });
     }
 
 
@@ -476,6 +470,8 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         request.setRequestListener(new VKRequestListener() {
             @Override
             public void onComplete(VKResponse response) {
+                data.clear();
+                swipeRefreshLayout.setRefreshing(false);
                 VkAudioArray dataFetched = (VkAudioArray) response.parsedModel;
                 for (int i = 0; i < dataFetched.size(); i++)
                     data.add(dataFetched.get(i));

@@ -176,16 +176,15 @@ public class MusicService extends Service {
                 Log.d(TAG, "Play from favs pos:" + songPosn + " " + favSongs.get(songFavPosn).getMp3());
                 getSongFroId(favSong.ownid, favSong.id, new Callbacks() {
                     @Override
-                    public void successCallback(String response) throws IOException {
+                    public void successCallback(String response){
                         player.reset();
-                        player.setDataSource(response);
+                        try {
+                            player.setDataSource(response);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
 
                         player.prepareAsync();
-                    }
-
-                    @Override
-                    public void failCallback(String response) {
-
                     }
                 });
                 VKSong favSong = favSongs.get(songFavPosn);
@@ -215,7 +214,7 @@ public class MusicService extends Service {
                     jsonarray = out.getJSONArray("response");
                     JSONObject jsonobject = jsonarray.getJSONObject(0);
                     callback.successCallback(jsonobject.getString("url"));
-                } catch (JSONException | IOException e) {
+                } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }
@@ -223,8 +222,7 @@ public class MusicService extends Service {
             @Override
             public void onError(VKError error) {
                 super.onError(error);
-                Toast.makeText(getApplicationContext(), "Error playing song", Toast.LENGTH_SHORT).show();
-                callback.failCallback("error");
+                Log.e(TAG,"error playing song");
             }
         });
         request.start();

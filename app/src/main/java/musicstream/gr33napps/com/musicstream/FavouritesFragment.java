@@ -22,7 +22,6 @@ public class FavouritesFragment extends Fragment{
     private FavouritesAdapter adapter;
     private RecyclerView recyclerView;
     private List<VKSong> data = new ArrayList<>();
-    private ProgressBar loading;
 
     public FavouritesFragment() {
         // Required empty public constructor
@@ -43,8 +42,6 @@ public class FavouritesFragment extends Fragment{
         Log.d(TAG,"onCreateView");
         recyclerView = (RecyclerView) v.findViewById(R.id.rv);
         recyclerView.addItemDecoration(new HorizontalDividerItemDecoration.Builder(getContext()).build());
-        loading = (ProgressBar) v.findViewById(R.id.loading);
-        loading.setVisibility(View.GONE);
         RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getContext());
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setAdapter(adapter);

@@ -15,7 +15,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.cocosw.query.CocoQuery;
 import com.vk.sdk.api.VKApi;
 import com.vk.sdk.api.VKError;
 import com.vk.sdk.api.VKParameters;
@@ -35,14 +34,11 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.So
     private int selectedPos = -1;
     private VKRequest request;
     TestActivity mainActivityRef;
-    CocoQuery q;
 
 
     FavouritesAdapter(List<VKSong> songs, Context c) {
         this.songs = songs;
         mainActivityRef = (TestActivity) c;
-        q = new CocoQuery(mainActivityRef);
-
     }
 
 //    private void primarySeekBarProgressUpdater() {
@@ -128,7 +124,6 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.So
 
         @Override
         public void onClick(View view) {
-            final View myView = view;
             notifyItemChanged(selectedPos);
             mainActivityRef.isSearchSelected = false;
             notifyDataSetChanged();
@@ -144,8 +139,6 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.So
                         jsonarray = out.getJSONArray("response");
                         JSONObject jsonobject = jsonarray.getJSONObject(0);
                         mp3 = jsonobject.getString("url");
-                        String title = jsonobject.getString("title");
-                        String artist = jsonobject.getString("artist");
                         mainActivityRef.songPicked(selectedPos);
                        // mainActivityRef.playSong(mp3, title, artist, vkid);
                     } catch (JSONException e) {

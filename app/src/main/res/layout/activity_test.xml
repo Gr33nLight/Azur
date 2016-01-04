@@ -7,52 +7,54 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-    <android.support.design.widget.AppBarLayout
-        android:id="@+id/appBarLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        >
-
-        <FrameLayout
+        <android.support.design.widget.AppBarLayout
+            android:id="@+id/appBarLayout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/frame"
-            app:layout_scrollFlags="scroll|enterAlways">
+            android:layout_height="wrap_content">
 
-            <android.support.v7.widget.Toolbar
-                android:id="@+id/toolbar"
+            <FrameLayout
+                android:id="@+id/frame"
                 android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                android:background="@color/theme_primary"
+                android:layout_height="wrap_content"
+                app:layout_scrollFlags="scroll|enterAlways">
+
+                <android.support.v7.widget.Toolbar
+                    android:id="@+id/toolbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="?attr/actionBarSize"
+                    android:background="@color/theme_primary"
+                    android:theme="@style/ToolBarStyle" />
+
+                <com.miguelcatalan.materialsearchview.MaterialSearchView
+                    android:id="@+id/search_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+            </FrameLayout>
+
+            <android.support.design.widget.TabLayout
+                android:id="@+id/tabs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:elevation="4dp"
                 android:theme="@style/ToolBarStyle" />
 
-            <com.miguelcatalan.materialsearchview.MaterialSearchView
-                android:id="@+id/search_view"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
 
-        </FrameLayout>
+        </android.support.design.widget.AppBarLayout>
 
-        <android.support.design.widget.TabLayout
-            android:id="@+id/tabs"
+        <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/swipe_container"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:theme="@style/ToolBarStyle"
-            android:elevation="4dp"/>
+            android:layout_height="match_parent"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
+            <android.support.v4.view.ViewPager
+                android:id="@+id/viewpager"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_below="@+id/appBarLayout" />
 
-    </android.support.design.widget.AppBarLayout>
-
-
-    <android.support.v4.view.ViewPager
-        android:id="@+id/viewpager"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@+id/appBarLayout"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior" >
-
-    </android.support.v4.view.ViewPager>
-
+        </android.support.v4.widget.SwipeRefreshLayout>
 
 
     </android.support.design.widget.CoordinatorLayout>

@@ -146,8 +146,6 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SongViewHo
                     LinearLayout.LayoutParams.WRAP_CONTENT);
             mBottomSheetDialog.getWindow().setGravity(Gravity.BOTTOM);
             mBottomSheetDialog.show();
-
-
             layoutAddFav.setOnClickListener(new View.OnClickListener() {
 
                 @Override
