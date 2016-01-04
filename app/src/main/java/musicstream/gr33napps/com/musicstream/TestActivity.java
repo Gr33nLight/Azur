@@ -149,10 +149,19 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
                 @Override
                 public void onCompletion(MediaPlayer mediaPlayer) {
                     progressBar.setVisibility(View.VISIBLE);
-                    if (isSearchSelected)
+                    if (isSearchSelected){
                         musicSrv.nextSong(true);
-                    else
+                        s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
+                        s.getAdapter().setSelectedPos(musicSrv.getSongPosn());
+                        s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
+                    }
+
+                    else{
                         musicSrv.nextSong(false);
+                        favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
+                        favs.getAdapter().setSelectedPos(musicSrv.getSongFavPosn());
+                        favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
+                    }
 
                 }
 
@@ -207,7 +216,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
 
                 } else {
                     musicSrv.nextSong(false);
-
                     favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
                     favs.getAdapter().setSelectedPos(musicSrv.getSongFavPosn());
                     favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
