@@ -271,7 +271,6 @@ public class MusicService extends Service implements
     @Override
     public void onPrepared(MediaPlayer mp) {
 
-
     }
 
     public void setSong(int songIndex, boolean search){
