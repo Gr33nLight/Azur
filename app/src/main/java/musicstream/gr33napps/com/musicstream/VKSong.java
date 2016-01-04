@@ -1,8 +1,6 @@
 package musicstream.gr33napps.com.musicstream;
 
-/**
- * Created by bruno on 12/8/2015.
- */
+
 public class VKSong {
     public String title = "Untitled", artist = "Unknown artist", mp3 = "null",id = "", ownid = "";
 

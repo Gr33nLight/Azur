@@ -34,7 +34,6 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.So
     private List<VKSong> songs;
     private int selectedPos = -1;
     private VKRequest request;
-    private PlayerUtils utils;
     TestActivity mainActivityRef;
     CocoQuery q;
 
@@ -113,7 +112,6 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.So
         SongViewHolder(View itemView) {
             super(itemView);
             itemView.setClickable(true);
-            utils = new PlayerUtils(mainActivityRef);
             title = (TextView) itemView.findViewById(R.id.title);
             artist = (TextView) itemView.findViewById(R.id.artist);
             songLayout = (RelativeLayout) itemView.findViewById(R.id.songLayout);

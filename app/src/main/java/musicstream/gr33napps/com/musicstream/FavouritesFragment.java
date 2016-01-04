@@ -71,9 +71,8 @@ public class FavouritesFragment extends Fragment{
                 String ownid = cursor.getString(cursor.getColumnIndex("ownid"));
                 String title = cursor.getString(cursor.getColumnIndex("title"));
                 String artist =  cursor.getString(cursor.getColumnIndex("artist"));
-
                 String mp3 =  cursor.getString(cursor.getColumnIndex("mp3"));
-                Song s = new Song(title,artist,mp3,id,ownid);
+                VKSong s = new VKSong(title,artist,mp3,id,ownid);
                 System.out.println("added song:" + s.toString());
                 data.add(s);
             } while (cursor.moveToNext());

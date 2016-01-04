@@ -74,7 +74,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     private FavouritesFragment favs;
     private DBHelper songsDb;
     private SQLiteDatabase db;
-    public PlayerUtils utils;
     public boolean isSearchSelected = true, wasPlaying = false;
     private Intent playIntent;
     private MusicService musicSrv;
@@ -264,7 +263,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         initGUI();
         ViewPager viewPager = (ViewPager) findViewById(R.id.viewpager);
         setupViewPager(viewPager);
-        utils = new PlayerUtils(favs, s, this);
         request = VKApi.audio().getPopular(VKParameters.from("only_eng", "1", "genre_id", "5"));
         request.addExtraParameter("count", 150);
         setReqListener(request);

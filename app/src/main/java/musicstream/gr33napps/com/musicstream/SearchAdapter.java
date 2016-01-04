@@ -24,7 +24,6 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SongViewHo
     private static final String TAG = "Gr33nDebug";
     private VkAudioArray songs;
     private int selectedPos = -1;
-    private PlayerUtils utils;
     TestActivity mainActivityRef;
 
 
@@ -106,7 +105,6 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SongViewHo
         SongViewHolder(View itemView) {
             super(itemView);
             itemView.setClickable(true);
-            utils = new PlayerUtils(mainActivityRef);
             title = (TextView) itemView.findViewById(R.id.title);
             artist = (TextView) itemView.findViewById(R.id.artist);
             songLayout = (RelativeLayout) itemView.findViewById(R.id.songLayout);
