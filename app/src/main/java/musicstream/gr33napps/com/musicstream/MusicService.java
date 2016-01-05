@@ -156,19 +156,21 @@ public class MusicService extends Service {
         return favSong;
     }
 
-    public void playSong(boolean search) {
+    public void playSong(final boolean search) {
+
         Log.e(TAG, "called from search " + search);
-        this.search = search;
-
-        //play a song
-
-        VKApiAudio song = songs.get(songPosn);
+        final VKApiAudio song = songs.get(songPosn);
         currentSong = song;
         try {
             if (search) {
                 player.reset();
                 player.setDataSource(song.url);
-                mainInterface.playCallBack(song);
+                mainInterface.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mainInterface.playCallBack(song);
+                    }
+                });
                 player.prepareAsync();
             } else {
                 player.pause();
@@ -176,30 +178,34 @@ public class MusicService extends Service {
                 Log.d(TAG, "Play from favs pos:" + songPosn + " " + favSongs.get(songFavPosn).getMp3());
                 getSongFroId(favSong.ownid, favSong.id, new Callbacks() {
                     @Override
-                    public void successCallback(String response){
+                    public void successCallback(String response) {
                         player.reset();
                         try {
                             player.setDataSource(response);
+                            VKSong favSong = favSongs.get(songFavPosn);
+                            final VKApiAudio finalSong = new VKApiAudio();
+                            finalSong.artist = favSong.getArtist();
+                            finalSong.title = favSong.getTitle();
+                            mainInterface.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mainInterface.playCallBack(finalSong);
+                                }
+                            });
+                            player.prepareAsync();
+
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-
-                        player.prepareAsync();
                     }
                 });
-                VKSong favSong = favSongs.get(songFavPosn);
-                VKApiAudio finalSong = new VKApiAudio();
-                finalSong.artist = favSong.getArtist();
-                finalSong.title = favSong.getTitle();
-                mainInterface.playCallBack(finalSong);
+
 
 
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
     }
 
     private void getSongFroId(String ownid, String vkid, final Callbacks callback) {
@@ -222,7 +228,7 @@ public class MusicService extends Service {
             @Override
             public void onError(VKError error) {
                 super.onError(error);
-                Log.e(TAG,"error playing song");
+                Log.e(TAG, "error playing song");
             }
         });
         request.start();

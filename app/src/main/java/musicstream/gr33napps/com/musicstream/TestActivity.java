@@ -270,8 +270,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         Log.d(TAG, song.artist + " " + song.title);
         currentTitle = song.title;
         currentArtist = song.artist;
-
-
         songTitle.setText("");
         artistName.setText("");
         // progressBar.setVisibility(View.INVISIBLE);
