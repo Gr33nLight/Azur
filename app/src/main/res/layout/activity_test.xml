@@ -61,6 +61,17 @@
     </android.support.design.widget.CoordinatorLayout>
 
 
+    <View
+        android:layout_width="fill_parent"
+        android:id="@+id/shadow_bottom"
+        android:layout_height="6dp"
+        android:visibility="gone"
+        android:background="@drawable/shadow_bottom"
+        android:layout_above="@+id/playerLayout"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:alpha="0.3" />
+
     <LinearLayout
         android:id="@+id/playerLayout"
         android:layout_width="fill_parent"

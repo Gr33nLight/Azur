@@ -12,6 +12,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.nfc.Tag;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PowerManager;
@@ -278,7 +279,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
 
     public void songPicked(int pos) {
         isPrepared = false;
-
+        findViewById(R.id.shadow_bottom).setVisibility(View.VISIBLE);
         playpause.setImageResource(R.drawable.ic_play);
         playerLayout.setVisibility(View.VISIBLE);
         progressBar.setVisibility(View.VISIBLE);
