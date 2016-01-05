@@ -34,11 +34,14 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.So
     private int selectedPos = -1;
     private VKRequest request;
     TestActivity mainActivityRef;
+    PlayerUtils utils;
+
 
 
     FavouritesAdapter(List<VKSong> songs, Context c) {
         this.songs = songs;
         mainActivityRef = (TestActivity) c;
+        utils = new PlayerUtils(mainActivityRef);
     }
 
 //    private void primarySeekBarProgressUpdater() {
@@ -198,7 +201,7 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.So
                                 jsonarray = out.getJSONArray("response");
                                 JSONObject jsonobject = jsonarray.getJSONObject(0);
                                 mp3 = jsonobject.getString("url");
-                                //utils.downLoadFromUrl(mp3, title.getText().toString(), artist.getText().toString());
+                                utils.downLoadFromUrl(mp3, title.getText().toString(), artist.getText().toString());
                             } catch (JSONException e) {
                                 e.printStackTrace();
                             }

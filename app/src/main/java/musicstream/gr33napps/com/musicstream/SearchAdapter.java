@@ -25,11 +25,13 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SongViewHo
     private VkAudioArray songs;
     private int selectedPos = -1;
     TestActivity mainActivityRef;
+    PlayerUtils utils;
 
 
     SearchAdapter(VkAudioArray songs, Context c) {
         this.songs = songs;
         mainActivityRef = (TestActivity) c;
+        utils = new PlayerUtils(mainActivityRef);
     }
 
 //    private void primarySeekBarProgressUpdater() {
@@ -164,7 +166,7 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SongViewHo
                 public void onClick(View v) {
                     Toast.makeText(mainActivityRef, "Downloading...", Toast.LENGTH_SHORT).show();
                     mainActivityRef.isSearchSelected = false;
-                    //utils.downLoadFromUrl(mp3, title.getText().toString(), artist.getText().toString());
+                    utils.downLoadFromUrl(mp3, title.getText().toString(), artist.getText().toString());
                     mBottomSheetDialog.dismiss();
                 }
             });
