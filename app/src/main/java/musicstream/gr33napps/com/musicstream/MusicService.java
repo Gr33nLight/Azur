@@ -10,11 +10,14 @@ import android.content.res.Resources;
 import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.session.MediaSession;
+import android.media.session.MediaSessionManager;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.widget.MediaController;
 import android.widget.Toast;
 
 import com.vk.sdk.api.VKApi;
@@ -35,6 +38,17 @@ import java.io.IOException;
 import java.util.List;
 
 public class MusicService extends Service {
+    public static final String ACTION_PLAY = "action_play";
+    public static final String ACTION_PAUSE = "action_pause";
+    public static final String ACTION_REWIND = "action_rewind";
+    public static final String ACTION_FAST_FORWARD = "action_fast_foward";
+    public static final String ACTION_NEXT = "action_next";
+    public static final String ACTION_PREVIOUS = "action_previous";
+    public static final String ACTION_STOP = "action_stop";
+    private MediaSessionManager mManager;
+    private MediaSession mSession;
+    private MediaController mController;
+
     private static final String TAG = "Debug";
     private final IBinder musicBind = new MusicBinder();
     //media player
@@ -79,9 +93,9 @@ public class MusicService extends Service {
             Log.d(TAG, "Song:" + songs.get(i).getMp3());
         Log.d(TAG, "Size:" + songs.size());
     }
-
+private int id = 1234;
     public void start() {
-        int id = 1234;
+
         Intent notificationIntent = new Intent(getApplicationContext(), TestActivity.class);
         PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(),
                 id, notificationIntent,
@@ -118,11 +132,11 @@ public class MusicService extends Service {
 
     public void initMusicPlayer() {
         player = new MediaPlayer();
-
         //set player properties
         player.setAudioStreamType(AudioManager.STREAM_MUSIC);
         player.setWakeMode(getApplicationContext(),
                 PowerManager.PARTIAL_WAKE_LOCK);
+
     }
 
     @Override
@@ -139,10 +153,36 @@ public class MusicService extends Service {
     }
 
     public void pause() {
+        Intent notIntent = new Intent(getBaseContext(), TestActivity.class);
+        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendInt = PendingIntent.getActivity(getBaseContext(), 0,
+                notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        Notification.Builder builder = new Notification.Builder(getBaseContext());
+
+        builder.setContentIntent(pendInt)
+                .setSmallIcon(android.R.drawable.ic_media_pause)
+                .setOngoing(true)
+                .setContentTitle(currentSong.title)
+                .setContentText(currentSong.artist);
+        Notification not = builder.build();
+        startForeground(id, not);
         player.pause();
     }
 
     public void play() {
+        Intent notIntent = new Intent(getBaseContext(), TestActivity.class);
+        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendInt = PendingIntent.getActivity(getBaseContext(), 0,
+                notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        Notification.Builder builder = new Notification.Builder(getBaseContext());
+
+        builder.setContentIntent(pendInt)
+                .setSmallIcon(android.R.drawable.ic_media_play)
+                .setOngoing(true)
+                .setContentTitle(currentSong.title)
+                .setContentText(currentSong.artist);
+        Notification not = builder.build();
+        startForeground(id, not);
         player.start();
     }
 
@@ -157,18 +197,29 @@ public class MusicService extends Service {
     }
 
     public void playSong(final boolean search) {
-
-        Log.e(TAG, "called from search " + search);
-        final VKApiAudio song = songs.get(songPosn);
-        currentSong = song;
         try {
             if (search) {
+                final VKApiAudio song = songs.get(songPosn);
+                currentSong = song;
                 player.reset();
                 player.setDataSource(song.url);
                 mainInterface.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         mainInterface.playCallBack(song);
+                        Intent notIntent = new Intent(getBaseContext(), TestActivity.class);
+                        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        PendingIntent pendInt = PendingIntent.getActivity(getBaseContext(), 0,
+                                notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                        Notification.Builder builder = new Notification.Builder(getBaseContext());
+
+                        builder.setContentIntent(pendInt)
+                                .setSmallIcon(android.R.drawable.ic_media_play)
+                                .setOngoing(true)
+                                .setContentTitle(song.title)
+                                .setContentText(song.artist);
+                        Notification not = builder.build();
+                        startForeground(id, not);
                     }
                 });
                 player.prepareAsync();
@@ -186,6 +237,19 @@ public class MusicService extends Service {
                             final VKApiAudio finalSong = new VKApiAudio();
                             finalSong.artist = favSong.getArtist();
                             finalSong.title = favSong.getTitle();
+                            Intent notIntent = new Intent(getBaseContext(), TestActivity.class);
+                            notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                            PendingIntent pendInt = PendingIntent.getActivity(getBaseContext(), 0,
+                                    notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                            Notification.Builder builder = new Notification.Builder(getBaseContext());
+
+                            builder.setContentIntent(pendInt)
+                                    .setSmallIcon(android.R.drawable.ic_media_play)
+                                    .setOngoing(true)
+                                    .setContentTitle(finalSong.title)
+                                    .setContentText(finalSong.artist);
+                            Notification not = builder.build();
+                            startForeground(id, not);
                             mainInterface.runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
