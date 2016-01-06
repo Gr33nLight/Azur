@@ -52,6 +52,11 @@ public class MusicService extends Service {
     private List<VKSong> favSongs;
     //current position songs
     private int songPosn;
+
+    public boolean isPlayFromSearch() {
+        return search;
+    }
+
     //current position fav songs
     private int songFavPosn;
     private  RemoteViews views,bigViews;
@@ -162,12 +167,17 @@ public class MusicService extends Service {
 
         views.setOnClickPendingIntent(R.id.status_bar_prev, ppreviousIntent);
         bigViews.setOnClickPendingIntent(R.id.status_bar_prev, ppreviousIntent);
-
-        views.setImageViewResource(R.id.status_bar_play,
-                android.R.drawable.ic_media_play);
-        bigViews.setImageViewResource(R.id.status_bar_play,
-                android.R.drawable.ic_media_pause);
-
+        if (player.isPlaying()) {
+            views.setImageViewResource(R.id.status_bar_play,
+                    android.R.drawable.ic_media_pause);
+            bigViews.setImageViewResource(R.id.status_bar_play,
+                    android.R.drawable.ic_media_pause);
+        }else{
+            views.setImageViewResource(R.id.status_bar_play,
+                    android.R.drawable.ic_media_play);
+            bigViews.setImageViewResource(R.id.status_bar_play,
+                    android.R.drawable.ic_media_play);
+        }
         views.setTextViewText(R.id.status_bar_track_name, "Song Title");
         bigViews.setTextViewText(R.id.status_bar_track_name, "Song Title");
 
@@ -185,6 +195,7 @@ public class MusicService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent == null) return START_STICKY;
         if (intent.getAction().equals(Constants.ACTION.PREV_ACTION)) {
             Toast.makeText(this, "Clicked Previous", Toast.LENGTH_SHORT).show();
             prevSong(true);
@@ -417,6 +428,7 @@ public class MusicService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if (player.isPlaying())
         player.stop();
         player.release();
 
@@ -452,4 +464,6 @@ public class MusicService extends Service {
         }
         this.playSong(search);
     }
+
+
 }

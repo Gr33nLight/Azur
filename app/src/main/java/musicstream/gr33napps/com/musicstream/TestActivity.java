@@ -2,11 +2,13 @@ package musicstream.gr33napps.com.musicstream;
 
 import android.app.Notification;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.database.sqlite.SQLiteDatabase;
 import android.media.AudioManager;
@@ -55,17 +57,20 @@ import junit.framework.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 public class TestActivity extends AppCompatActivity implements View.OnTouchListener, SwipeRefreshLayout.OnRefreshListener {
 
     private static final String TAG = "Gr33nDebug";
-    private ImageView playpause, fwd, bwd;
-    private TextView songTitle, artistName, totalTime, currentTime;
-    private ProgressBar progressBar;
-    private SeekBar seekBar;
+    private  ImageView playpause, fwd, bwd;//setting static attributes because when we return from outside the activity we want them to match the current song playing
+    private  TextView songTitle, artistName, totalTime, currentTime; //setting static attributes because when we return from outside the activity we want them to match the current song playing
+    private  ProgressBar progressBar;
+    private  SeekBar seekBar;
 
-    public String currentTitle = "", currentArtist = "";
+    public  String currentTitle, currentArtist;//setting static attributes because when we return from outside the activity we want them to match the current song playing
+
     public static boolean prevPlayed = false;
     public static int lengthms, seekpos = 0;
     private VKRequest request;
@@ -76,7 +81,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     private TabLayout tabLayout;
     private SearchFragment s;
     private FavouritesFragment favs;
-    private DBHelper songsDb;
+    private static DBHelper songsDb;
     private SQLiteDatabase db;
     public boolean isSearchSelected = true, wasPlaying = false;
     private Intent playIntent;
@@ -84,9 +89,14 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     private boolean musicBound;
     private MediaPlayer player;
     private TestActivity act;
-    private Updater updater;
     private boolean isPrepared = false;
     private SwipeRefreshLayout swipeRefreshLayout;
+
+    private Updater updater;
+    public static DBHelper getSongsDb() {
+
+        return songsDb;
+    }
 
     private ServiceConnection musicConnection = new ServiceConnection() {
 
@@ -103,6 +113,12 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
 
             Log.d(TAG, "binded!");
             musicSrv.setMainInterface(act);
+            if (musicSrv.getPlayer().isPlaying()){
+
+
+
+            }
+
 
             musicSrv.getPlayer().setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 @Override
@@ -110,20 +126,9 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
                     isPrepared = true;
                     adapter.notifyDataSetChanged();
 
-                    if (isSearchSelected) {
-                        VKApiAudio audio = musicSrv.getCurrentSong();
-                        currentArtist = audio.artist;
-                        currentTitle = audio.title;
-
-                    } else {
-                        VKSong favSong = musicSrv.getCurrentFavSong();
-                        currentArtist = favSong.artist;
-                        currentTitle = favSong.title;
-                    }
 
 
                     playpause.setImageResource(R.drawable.ic_pause);
-
                     if (updater != null)
                         updater.ferma();
                     lengthms = musicSrv.getPlayer().getDuration();
@@ -138,45 +143,84 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
                     progressBar.setVisibility(View.INVISIBLE);
                     musicSrv.getPlayer().start();
                     player = musicSrv.getPlayer();
-
                     runUpdater();
                 }
-            });
-            musicSrv.getPlayer().setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                @Override
-                public void onCompletion(MediaPlayer mediaPlayer) {
-                    progressBar.setVisibility(View.VISIBLE);
-                    if (isSearchSelected){
-                        musicSrv.nextSong(true);
-                        s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
-                        s.getAdapter().setSelectedPos(musicSrv.getSongPosn());
-                        s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
-                    }
 
-                    else{
-                        musicSrv.nextSong(false);
-                        favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
-                        favs.getAdapter().setSelectedPos(musicSrv.getSongFavPosn());
-                        favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
-                    }
+                    });
+                    musicSrv.getPlayer().setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                        @Override
+                        public void onCompletion(MediaPlayer mediaPlayer) {
+                            progressBar.setVisibility(View.VISIBLE);
+                            if (isSearchSelected) {
+                                musicSrv.nextSong(true);
+                                s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
+                                s.getAdapter().setSelectedPos(musicSrv.getSongPosn());
+                                s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
+                            } else {
+                                musicSrv.nextSong(false);
+                                favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
+                                favs.getAdapter().setSelectedPos(musicSrv.getSongFavPosn());
+                                favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
+                            }
 
+                        }
+
+                    });
+
+                    musicSrv.getPlayer().setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
+                        @Override
+                        public void onBufferingUpdate(MediaPlayer mp, int percent) {
+                            seekBar.setSecondaryProgress(percent);
+                        }
+                    });
                 }
 
-            });
-
-            musicSrv.getPlayer().setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
                 @Override
-                public void onBufferingUpdate(MediaPlayer mp, int percent) {
-                    seekBar.setSecondaryProgress(percent);
+                public void onServiceDisconnected(ComponentName name) {
+                    musicBound = false;
+                    musicSrv = null;
+                    musicConnection = null;
                 }
-            });
-        }
+            };
+    class Updater extends Thread {
+
+        boolean running = true;
 
         @Override
-        public void onServiceDisconnected(ComponentName name) {
-            musicBound = false;
+        public void run() {
+            while (seekBar.getProgress() <= 100 && running) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (seekBar != null && currentTime != null) {
+                                seekBar.setProgress((int) (((float) player.getCurrentPosition() / lengthms) * 100));
+
+                                int total = player.getCurrentPosition();
+                                currentTime.setText(String.format("%d:%02d",
+                                        TimeUnit.MILLISECONDS.toMinutes(total),
+                                        TimeUnit.MILLISECONDS.toSeconds(total) -
+                                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(total))
+                                ));
+
+                            }
+                        } catch (IllegalStateException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
         }
-    };
+
+        public void ferma() {
+            running = false;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -185,7 +229,8 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         s = new SearchFragment();
         favs = new FavouritesFragment();
         act = this;
-        songsDb = new DBHelper(getBaseContext());
+        musicBound = false;
+        songsDb = new DBHelper(getApplicationContext());
         adapter = new SearchAdapter(data, this);
         initGUI();
         ViewPager viewPager = (ViewPager) findViewById(R.id.viewpager);
@@ -271,6 +316,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     public void songPicked(int pos) {
+
         isPrepared = false;
         findViewById(R.id.shadow_bottom).setVisibility(View.VISIBLE);
         playpause.setImageResource(R.drawable.ic_play);
@@ -303,45 +349,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
 
-    class Updater extends Thread {
-
-        boolean running = true;
-
-        @Override
-        public void run() {
-            while (seekBar.getProgress() <= 100 && running) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            if (seekBar != null && currentTime != null) {
-                                seekBar.setProgress((int) (((float) player.getCurrentPosition() / lengthms) * 100));
-
-                                int total = player.getCurrentPosition();
-                                currentTime.setText(String.format("%d:%02d",
-                                        TimeUnit.MILLISECONDS.toMinutes(total),
-                                        TimeUnit.MILLISECONDS.toSeconds(total) -
-                                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(total))
-                                ));
-
-                            }
-                        } catch (IllegalStateException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        public void ferma() {
-            running = false;
-        }
-    }
 
     private void runUpdater() {
         updater = new Updater();
@@ -351,7 +358,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         return data;
     }
 
-    public SQLiteDatabase getReadDB() {
+    public static SQLiteDatabase getReadDB() {
         return songsDb.getReadableDatabase();
     }
 
@@ -441,6 +448,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         if (!(musicSrv.getPlayer().isPlaying()) && prevPlayed) {
             playpause.setImageResource(R.drawable.ic_pause);
             musicSrv.play();
+
         } else if (musicSrv.getPlayer().isPlaying()) {
             playpause.setImageResource(R.drawable.ic_play);
             musicSrv.pause();
@@ -450,10 +458,12 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onStart() {
         super.onStart();
-        if (playIntent == null) {
+        if (!musicBound && playIntent == null) {
             playIntent = new Intent(this, MusicService.class);
             playIntent.setAction(Constants.ACTION.STARTFOREGROUND_ACTION);
             bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
+            startService(playIntent);
+            musicBound = true;
         }
     }
 
@@ -524,13 +534,31 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onResume() {
         super.onResume();
-        songsDb = new DBHelper(getBaseContext());
+        final String SOME_ACTION = "com.android.UDPATE_SONG_SEEKBAR";
+        IntentFilter intentFilter = new IntentFilter(SOME_ACTION);
+        //registerReceiver(receiver, intentFilter);
+        //songsDb = new DBHelper(getBaseContext());
+        //songDB was made static and inizialized only in onCreate
+        if (musicBound && isPrepared) {
+            if (isSearchSelected) {
+                VKApiAudio audio = musicSrv.getCurrentSong();
+                currentArtist = audio.artist;
+                currentTitle = audio.title;
+
+            } else {
+                VKSong favSong = musicSrv.getCurrentFavSong();
+                currentArtist = favSong.artist;
+                currentTitle = favSong.title;
+            }
+        }
 
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+
+        //unregisterReceiver(receiver);
     }
 
     @Override
@@ -551,8 +579,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         } else {
             super.onBackPressed();
         }
-        if (updater != null)
-            updater.ferma();
+
     }
 
     @Override
@@ -584,6 +611,15 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         }
         return false;
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (musicBound)
+            unbindService(musicConnection);
+
+    }
+
 /*
     @Override
     public void onBufferingUpdate(MediaPlayer mediaPlayer, int i) {

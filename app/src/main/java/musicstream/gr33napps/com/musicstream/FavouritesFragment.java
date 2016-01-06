@@ -31,7 +31,10 @@ public class FavouritesFragment extends Fragment{
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         adapter = new FavouritesAdapter(data, getContext());
-        //getSongsFromDB();
+        getSongsFromDB();
+
+        adapter.setSongs(data);
+        adapter.notifyDataSetChanged();
     }
 
     @Override
@@ -39,7 +42,7 @@ public class FavouritesFragment extends Fragment{
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_rv, container, false);
-        Log.d(TAG,"onCreateView");
+        Log.d(TAG, "onCreateView");
         recyclerView = (RecyclerView) v.findViewById(R.id.rv);
         recyclerView.addItemDecoration(new HorizontalDividerItemDecoration.Builder(getContext()).build());
         RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getContext());
@@ -58,7 +61,7 @@ public class FavouritesFragment extends Fragment{
 
         // Select All Query
         String selectQuery = "SELECT  * FROM songs";
-        SQLiteDatabase db = ((TestActivity) getActivity()).getReadDB();
+        SQLiteDatabase db = ((TestActivity) getActivity()).getSongsDb().getReadableDatabase();
         Cursor cursor = db.rawQuery(selectQuery, null);
         // looping through all rows and adding to list
         if (cursor.moveToFirst()) {
@@ -73,8 +76,6 @@ public class FavouritesFragment extends Fragment{
                 System.out.println("added song:" + s.toString());
                 data.add(s);
             } while (cursor.moveToNext());
-            adapter.setSongs(data);
-            adapter.notifyDataSetChanged();
         }
         db.close();
         return data;
