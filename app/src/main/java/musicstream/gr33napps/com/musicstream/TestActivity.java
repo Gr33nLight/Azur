@@ -51,6 +51,8 @@ import com.vk.sdk.api.VKResponse;
 import com.vk.sdk.api.model.VKApiAudio;
 import com.vk.sdk.api.model.VkAudioArray;
 
+import junit.framework.Test;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -86,11 +88,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     private boolean isPrepared = false;
     private SwipeRefreshLayout swipeRefreshLayout;
 
-
-    //@TODO highlight song when not touching interface (like when oncompletion is called)
-
-
-    //connect to the service
     private ServiceConnection musicConnection = new ServiceConnection() {
 
         @Override
@@ -98,7 +95,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
             MusicService.MusicBinder binder = (MusicService.MusicBinder) service;
             //get service
             musicSrv = binder.getService();
-            musicSrv.start();
             //pass list
             musicSrv.setSongs(data);
             //pass fav list
@@ -181,9 +177,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
             musicBound = false;
         }
     };
-
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -390,7 +383,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     private void initGUI() {
 
         playerLayout = (LinearLayout) findViewById(R.id.playerLayout);
-        playerLayout.setVisibility(View.GONE);
+//        playerLayout.setVisibility(View.GONE);
         totalTime = (TextView) findViewById(R.id.totalTime);
         currentTime = (TextView) findViewById(R.id.currentTime);
         tabLayout = (TabLayout) findViewById(R.id.tabs);
@@ -459,8 +452,8 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         super.onStart();
         if (playIntent == null) {
             playIntent = new Intent(this, MusicService.class);
+            playIntent.setAction(Constants.ACTION.STARTFOREGROUND_ACTION);
             bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
-
         }
     }
 
@@ -532,14 +525,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     protected void onResume() {
         super.onResume();
         songsDb = new DBHelper(getBaseContext());
-
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        unbindService(musicConnection);
-        musicSrv = null;
 
     }
 

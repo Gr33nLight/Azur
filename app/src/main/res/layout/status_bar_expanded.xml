@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    android:background="@color/theme_primary"
+    android:id="@+id/notificationbg" android:layout_width="fill_parent" android:layout_height="128.0dip"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <ImageView
+        android:contentDescription="album_art"
+        android:id="@+id/status_bar_album_art"
+        android:layout_width="@dimen/notification_expanded_height"
+        android:layout_height="@dimen/notification_expanded_height"
+        android:scaleType="centerCrop"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="true"/>
+
+    <LinearLayout
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:id="@+id/buttons"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:divider="?android:listDivider"
+        android:layout_toEndOf="@+id/status_bar_album_art"
+        android:layout_toRightOf="@id/status_bar_album_art"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:showDividers="middle"
+        android:dividerPadding="12.0dip">
+        <ImageButton
+            android:contentDescription="prev"
+            android:id="@+id/status_bar_prev"
+            android:background="?android:selectableItemBackground"
+            android:padding="10.0dip"
+            android:layout_width="0.0dip"
+            android:layout_height="@dimen/play_controls_notification"
+            android:src="@android:drawable/ic_media_previous"
+            android:scaleType="fitCenter"
+            android:layout_weight="1.0" />
+        <ImageButton
+            android:contentDescription="play"
+            android:id="@+id/status_bar_play"
+            android:background="?android:selectableItemBackground"
+            android:padding="10.0dip"
+            android:layout_width="0.0dip"
+            android:layout_height="@dimen/play_controls_notification"
+            android:src="@android:drawable/ic_media_play"
+            android:scaleType="fitCenter"
+            android:layout_weight="1.0" />
+        <ImageButton android:id="@+id/status_bar_next"
+            android:contentDescription="next"
+            android:background="?android:selectableItemBackground"
+            android:padding="10.0dip"
+            android:layout_width="0.0dip"
+            android:layout_height="@dimen/play_controls_notification"
+            android:src="@android:drawable/ic_media_next"
+            android:scaleType="fitCenter"
+            android:layout_weight="1.0" />
+    </LinearLayout>
+    <ImageView
+        android:background="?android:dividerHorizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="1.0px"
+        android:layout_toEndOf="@+id/status_bar_album_art"
+        android:layout_toRightOf="@id/status_bar_album_art"
+        android:layout_above="@+id/buttons"
+        android:layout_alignParentRight="true" />
+    <LinearLayout
+        android:layout_gravity="center_vertical"
+        android:orientation="vertical"
+        android:id="@+id/textarea"
+        android:paddingStart="@dimen/notification_padding"
+        android:paddingLeft="@dimen/notification_padding"
+        android:paddingTop="8.0dip"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_toRightOf="@+id/status_bar_album_art"
+        android:layout_toEndOf="@+id/status_bar_album_art">
+        <TextView
+            android:ellipsize="marquee"
+            android:layout_gravity="start"
+            android:id="@+id/status_bar_track_name"
+            android:focusable="true"
+            android:fadingEdge="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:singleLine="true"
+            android:text="Song Name" />
+        <TextView
+            android:ellipsize="marquee"
+            android:layout_gravity="start"
+            android:id="@+id/status_bar_artist_name"
+            android:fadingEdge="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:text="Artist Name" />
+    </LinearLayout>
+</RelativeLayout>

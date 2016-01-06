@@ -17,7 +17,9 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.view.View;
 import android.widget.MediaController;
+import android.widget.RemoteViews;
 import android.widget.Toast;
 
 import com.vk.sdk.api.VKApi;
@@ -38,29 +40,22 @@ import java.io.IOException;
 import java.util.List;
 
 public class MusicService extends Service {
-    public static final String ACTION_PLAY = "action_play";
-    public static final String ACTION_PAUSE = "action_pause";
-    public static final String ACTION_REWIND = "action_rewind";
-    public static final String ACTION_FAST_FORWARD = "action_fast_foward";
-    public static final String ACTION_NEXT = "action_next";
-    public static final String ACTION_PREVIOUS = "action_previous";
-    public static final String ACTION_STOP = "action_stop";
-    private MediaSessionManager mManager;
-    private MediaSession mSession;
-    private MediaController mController;
 
+    private int id = 1234;
     private static final String TAG = "Debug";
     private final IBinder musicBind = new MusicBinder();
     //media player
     private MediaPlayer player;
     //search song list
-    private VkAudioArray songs;
+    private VkAudioArray songs = new VkAudioArray();
     //favourite song list
     private List<VKSong> favSongs;
     //current position songs
     private int songPosn;
     //current position fav songs
     private int songFavPosn;
+    private  RemoteViews views,bigViews;
+
 
     private VKRequest request;
 
@@ -84,6 +79,7 @@ public class MusicService extends Service {
 
     public void setSongs(VkAudioArray songs) {
         this.songs = songs;
+        showNotification();
 
     }
 
@@ -93,28 +89,7 @@ public class MusicService extends Service {
             Log.d(TAG, "Song:" + songs.get(i).getMp3());
         Log.d(TAG, "Size:" + songs.size());
     }
-private int id = 1234;
-    public void start() {
 
-        Intent notificationIntent = new Intent(getApplicationContext(), TestActivity.class);
-        PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(),
-                id, notificationIntent,
-                PendingIntent.FLAG_CANCEL_CURRENT);
-
-        Resources res = getApplicationContext().getResources();
-        Notification.Builder builder = new Notification.Builder(getApplicationContext());
-
-        builder.setContentIntent(contentIntent)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setLargeIcon(BitmapFactory.decodeResource(res, R.mipmap.ic_launcher))
-                .setTicker("AzureMusic")
-                .setWhen(System.currentTimeMillis())
-                .setAutoCancel(true)
-                .setContentTitle("AzureMusic")
-                .setContentText("AzureMusic");
-        Notification n = builder.build();
-        startForeground(id, n);
-    }
 
     public class MusicBinder extends Binder {
         MusicService getService() {
@@ -139,6 +114,120 @@ private int id = 1234;
 
     }
 
+    Notification status;
+    private final String LOG_TAG = "NotificationService";
+
+    private void showNotification() {
+// Using RemoteViews to bind custom layouts into Notification
+        views = new RemoteViews(getPackageName(),
+                R.layout.status_bar);
+        bigViews = new RemoteViews(getPackageName(),
+                R.layout.status_bar_expanded);
+
+// showing default album image
+        views.setViewVisibility(R.id.status_bar_icon, View.VISIBLE);
+        bigViews.setImageViewBitmap(R.id.status_bar_album_art,
+                Constants.getDefaultAlbumArt(this));
+
+        Intent notificationIntent = new Intent(this, TestActivity.class);
+        notificationIntent.setAction(Constants.ACTION.MAIN_ACTION);
+        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+                notificationIntent, 0);
+
+        Intent previousIntent = new Intent(this, MusicService.class);
+        previousIntent.setAction(Constants.ACTION.PREV_ACTION);
+        PendingIntent ppreviousIntent = PendingIntent.getService(this, 0,
+                previousIntent, 0);
+
+        Intent playIntent = new Intent(this, MusicService.class);
+        playIntent.setAction(Constants.ACTION.PLAY_ACTION);
+        PendingIntent pplayIntent = PendingIntent.getService(this, 0,
+                playIntent, 0);
+
+        Intent nextIntent = new Intent(this, MusicService.class);
+        nextIntent.setAction(Constants.ACTION.NEXT_ACTION);
+        PendingIntent pnextIntent = PendingIntent.getService(this, 0,
+                nextIntent, 0);
+
+        Intent closeIntent = new Intent(this, MusicService.class);
+        closeIntent.setAction(Constants.ACTION.STOPFOREGROUND_ACTION);
+
+        views.setOnClickPendingIntent(R.id.status_bar_play, pplayIntent);
+        bigViews.setOnClickPendingIntent(R.id.status_bar_play, pplayIntent);
+
+        views.setOnClickPendingIntent(R.id.status_bar_next, pnextIntent);
+        bigViews.setOnClickPendingIntent(R.id.status_bar_next, pnextIntent);
+
+        views.setOnClickPendingIntent(R.id.status_bar_prev, ppreviousIntent);
+        bigViews.setOnClickPendingIntent(R.id.status_bar_prev, ppreviousIntent);
+
+        views.setImageViewResource(R.id.status_bar_play,
+                android.R.drawable.ic_media_play);
+        bigViews.setImageViewResource(R.id.status_bar_play,
+                android.R.drawable.ic_media_pause);
+
+        views.setTextViewText(R.id.status_bar_track_name, "Song Title");
+        bigViews.setTextViewText(R.id.status_bar_track_name, "Song Title");
+
+        views.setTextViewText(R.id.status_bar_artist_name, "Artist Name");
+        bigViews.setTextViewText(R.id.status_bar_artist_name, "Artist Name");
+
+        status = new Notification.Builder(this).build();
+        status.contentView = views;
+        status.bigContentView = bigViews;
+        status.flags = Notification.FLAG_ONGOING_EVENT;
+        status.icon = R.mipmap.ic_launcher;
+        status.contentIntent = pendingIntent;
+        startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent.getAction().equals(Constants.ACTION.PREV_ACTION)) {
+            Toast.makeText(this, "Clicked Previous", Toast.LENGTH_SHORT).show();
+            prevSong(true);
+
+        } else if (intent.getAction().equals(Constants.ACTION.PLAY_ACTION)) {
+            Toast.makeText(this, "Clicked Play", Toast.LENGTH_SHORT).show();
+            if(player.isPlaying()){
+                player.pause();
+                views.setImageViewResource(R.id.status_bar_play,
+                        android.R.drawable.ic_media_play);
+                bigViews.setImageViewResource(R.id.status_bar_play,
+                        android.R.drawable.ic_media_play);
+                status.contentView = views;
+                status.bigContentView = bigViews;
+                status.flags = Notification.FLAG_ONGOING_EVENT;
+                startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
+            }
+            else {
+                player.start();
+                views.setImageViewResource(R.id.status_bar_play,
+                        android.R.drawable.ic_media_pause);
+                bigViews.setImageViewResource(R.id.status_bar_play,
+                        android.R.drawable.ic_media_pause);
+                status.contentView = views;
+                status.bigContentView = bigViews;
+                status.flags = Notification.FLAG_ONGOING_EVENT;
+                startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
+            }
+
+        } else if (intent.getAction().equals(Constants.ACTION.NEXT_ACTION)) {
+            Toast.makeText(this, "Clicked Next", Toast.LENGTH_SHORT).show();
+            nextSong(true);
+
+        } else if (intent.getAction().equals(
+                Constants.ACTION.STOPFOREGROUND_ACTION)) {
+            Log.i(LOG_TAG, "Received Stop Foreground Intent");
+            Toast.makeText(this, "Service Stoped", Toast.LENGTH_SHORT).show();
+            stopForeground(true);
+            stopSelf();
+        }
+        return START_STICKY;
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -153,36 +242,36 @@ private int id = 1234;
     }
 
     public void pause() {
-        Intent notIntent = new Intent(getBaseContext(), TestActivity.class);
-        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendInt = PendingIntent.getActivity(getBaseContext(), 0,
-                notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        Notification.Builder builder = new Notification.Builder(getBaseContext());
-
-        builder.setContentIntent(pendInt)
-                .setSmallIcon(android.R.drawable.ic_media_pause)
-                .setOngoing(true)
-                .setContentTitle(currentSong.title)
-                .setContentText(currentSong.artist);
-        Notification not = builder.build();
-        startForeground(id, not);
+//        Intent notIntent = new Intent(getBaseContext(), TestActivity.class);
+//        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//        PendingIntent pendInt = PendingIntent.getActivity(getBaseContext(), 0,
+//                notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+//        Notification.Builder builder = new Notification.Builder(getBaseContext());
+//
+//        builder.setContentIntent(pendInt)
+//                .setSmallIcon(android.R.drawable.ic_media_pause)
+//                .setOngoing(true)
+//                .setContentTitle(currentSong.title)
+//                .setContentText(currentSong.artist);
+//        Notification not = builder.build();
+//        startForeground(id, not);
         player.pause();
     }
 
     public void play() {
-        Intent notIntent = new Intent(getBaseContext(), TestActivity.class);
-        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendInt = PendingIntent.getActivity(getBaseContext(), 0,
-                notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        Notification.Builder builder = new Notification.Builder(getBaseContext());
-
-        builder.setContentIntent(pendInt)
-                .setSmallIcon(android.R.drawable.ic_media_play)
-                .setOngoing(true)
-                .setContentTitle(currentSong.title)
-                .setContentText(currentSong.artist);
-        Notification not = builder.build();
-        startForeground(id, not);
+//        Intent notIntent = new Intent(getBaseContext(), TestActivity.class);
+//        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//        PendingIntent pendInt = PendingIntent.getActivity(getBaseContext(), 0,
+//                notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+//        Notification.Builder builder = new Notification.Builder(getBaseContext());
+//
+//        builder.setContentIntent(pendInt)
+//                .setSmallIcon(android.R.drawable.ic_media_play)
+//                .setOngoing(true)
+//                .setContentTitle(currentSong.title)
+//                .setContentText(currentSong.artist);
+//        Notification not = builder.build();
+//        startForeground(id, not);
         player.start();
     }
 
@@ -207,19 +296,27 @@ private int id = 1234;
                     @Override
                     public void run() {
                         mainInterface.playCallBack(song);
-                        Intent notIntent = new Intent(getBaseContext(), TestActivity.class);
-                        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        PendingIntent pendInt = PendingIntent.getActivity(getBaseContext(), 0,
-                                notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-                        Notification.Builder builder = new Notification.Builder(getBaseContext());
-
-                        builder.setContentIntent(pendInt)
-                                .setSmallIcon(android.R.drawable.ic_media_play)
-                                .setOngoing(true)
-                                .setContentTitle(song.title)
-                                .setContentText(song.artist);
-                        Notification not = builder.build();
-                        startForeground(id, not);
+                        views.setTextViewText(R.id.status_bar_track_name, song.title);
+                        views.setTextViewText(R.id.status_bar_artist_name, song.artist);
+                        bigViews.setTextViewText(R.id.status_bar_track_name, song.title);
+                        bigViews.setTextViewText(R.id.status_bar_artist_name, song.artist);
+                        status.contentView = views;
+                        status.bigContentView = bigViews;
+                        status.flags = Notification.FLAG_ONGOING_EVENT;
+                        startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
+//                        Intent notIntent = new Intent(getBaseContext(), TestActivity.class);
+//                        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//                        PendingIntent pendInt = PendingIntent.getActivity(getBaseContext(), 0,
+//                                notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+//                        Notification.Builder builder = new Notification.Builder(getBaseContext());
+//
+//                        builder.setContentIntent(pendInt)
+//                                .setSmallIcon(android.R.drawable.ic_media_play)
+//                                .setOngoing(true)
+//                                .setContentTitle(song.title)
+//                                .setContentText(song.artist);
+//                        Notification not = builder.build();
+//                        startForeground(id, not);
                     }
                 });
                 player.prepareAsync();
@@ -237,23 +334,32 @@ private int id = 1234;
                             final VKApiAudio finalSong = new VKApiAudio();
                             finalSong.artist = favSong.getArtist();
                             finalSong.title = favSong.getTitle();
-                            Intent notIntent = new Intent(getBaseContext(), TestActivity.class);
-                            notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                            PendingIntent pendInt = PendingIntent.getActivity(getBaseContext(), 0,
-                                    notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-                            Notification.Builder builder = new Notification.Builder(getBaseContext());
-
-                            builder.setContentIntent(pendInt)
-                                    .setSmallIcon(android.R.drawable.ic_media_play)
-                                    .setOngoing(true)
-                                    .setContentTitle(finalSong.title)
-                                    .setContentText(finalSong.artist);
-                            Notification not = builder.build();
-                            startForeground(id, not);
+//                            Intent notIntent = new Intent(getBaseContext(), TestActivity.class);
+//                            notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//                            PendingIntent pendInt = PendingIntent.getActivity(getBaseContext(), 0,
+//                                    notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+//                            Notification.Builder builder = new Notification.Builder(getBaseContext());
+//
+//                            builder.setContentIntent(pendInt)
+//                                    .setSmallIcon(android.R.drawable.ic_media_play)
+//                                    .setOngoing(true)
+//                                    .setContentTitle(finalSong.title)
+//                                    .setContentText(finalSong.artist);
+//                            Notification not = builder.build();
+//                            startForeground(id, not);
                             mainInterface.runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
+                                    views.setTextViewText(R.id.status_bar_track_name, finalSong.title);
+                                    views.setTextViewText(R.id.status_bar_artist_name, finalSong.artist);
+                                    bigViews.setTextViewText(R.id.status_bar_track_name, finalSong.title);
+                                    bigViews.setTextViewText(R.id.status_bar_artist_name, finalSong.artist);
+                                    status.contentView = views;
+                                    status.bigContentView = bigViews;
+                                    status.flags = Notification.FLAG_ONGOING_EVENT;
+                                    startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
                                     mainInterface.playCallBack(finalSong);
+
                                 }
                             });
                             player.prepareAsync();
@@ -263,7 +369,6 @@ private int id = 1234;
                         }
                     }
                 });
-
 
 
             }
