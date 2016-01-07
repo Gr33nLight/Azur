@@ -3,4 +3,5 @@ build/
 app/build
 .gradle
 .idea/
+Azur.iml
 app/app.iml
