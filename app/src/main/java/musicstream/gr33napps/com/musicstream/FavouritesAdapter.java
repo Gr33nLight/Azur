@@ -37,7 +37,6 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.So
     PlayerUtils utils;
 
 
-
     FavouritesAdapter(List<VKSong> songs, Context c) {
         this.songs = songs;
         mainActivityRef = (TestActivity) c;
@@ -143,7 +142,7 @@ public class FavouritesAdapter extends RecyclerView.Adapter<FavouritesAdapter.So
                         JSONObject jsonobject = jsonarray.getJSONObject(0);
                         mp3 = jsonobject.getString("url");
                         mainActivityRef.songPicked(selectedPos);
-                       // mainActivityRef.playSong(mp3, title, artist, vkid);
+                        // mainActivityRef.playSong(mp3, title, artist, vkid);
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }

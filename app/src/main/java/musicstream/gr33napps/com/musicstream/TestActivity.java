@@ -90,7 +90,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     private boolean musicBound;
     private MediaPlayer player;
     private TestActivity act;
-    private boolean isPrepared = false;
+    public boolean isPrepared = false;
     private SwipeRefreshLayout swipeRefreshLayout;
     private BroadcastReceiver receiver;
 
@@ -116,13 +116,11 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
 
             Log.d(TAG, "binded!");
             musicSrv.setMainInterface(act);
-            if (musicSrv.getPlayer().isPlaying()) {
-
-
-            }
             musicSrv.getPlayer().setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 @Override
                 public void onPrepared(MediaPlayer mp) {
+                    bwd.setEnabled(true);
+                    fwd.setEnabled(true);
                     isPrepared = true;
                     adapter.notifyDataSetChanged();
                     playpause.setImageResource(R.drawable.ic_pause);
@@ -249,6 +247,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         fwd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                fwd.setEnabled(false);
                 progressBar.setVisibility(View.VISIBLE);
                 playpause.setImageResource(R.drawable.ic_play);
                 isPrepared = false;
@@ -271,6 +270,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
 
             @Override
             public void onClick(View view) {
+                bwd.setEnabled(false);
                 progressBar.setVisibility(View.VISIBLE);
                 playpause.setImageResource(R.drawable.ic_play);
                 isPrepared = false;
@@ -318,7 +318,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         artistName.setText("");
         playpause.setImageResource(R.drawable.ic_play);
         progressBar.setVisibility(View.VISIBLE);
-        Log.e(TAG, "issSearch:" + isSearchSelected + " pos: " + s.getAdapter().getSelectedPos());
         if(playerLayout.getVisibility() == View.GONE)playerLayout.setVisibility(View.VISIBLE);
         if (isSearchSelected){
             s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
@@ -335,13 +334,13 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     public void songPicked(int pos) {
-
         isPrepared = false;
         findViewById(R.id.shadow_bottom).setVisibility(View.VISIBLE);
         playpause.setImageResource(R.drawable.ic_play);
+        songTitle.setText("");
+        artistName.setText("");
         playerLayout.setVisibility(View.VISIBLE);
         progressBar.setVisibility(View.VISIBLE);
-
         musicSrv.setSong(pos, isSearchSelected);
         if (isSearchSelected) {
             favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
@@ -464,13 +463,15 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     public void togglePlayback() {
-        if (!(musicSrv.getPlayer().isPlaying()) && prevPlayed) {
-            playpause.setImageResource(R.drawable.ic_pause);
-            musicSrv.play();
+        if(isPrepared){
+            if (!(musicSrv.getPlayer().isPlaying()) && prevPlayed) {
+                playpause.setImageResource(R.drawable.ic_pause);
+                musicSrv.play();
 
-        } else if (musicSrv.getPlayer().isPlaying()) {
-            playpause.setImageResource(R.drawable.ic_play);
-            musicSrv.pause();
+            } else if (musicSrv.getPlayer().isPlaying()) {
+                playpause.setImageResource(R.drawable.ic_play);
+                musicSrv.pause();
+            }
         }
     }
 
@@ -487,6 +488,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
 //                new IntentFilter(MusicService.COPA_RESULT)
 //        );
         if (!musicBound && playIntent == null) {
+            Log.e(TAG,"onStart "+musicBound + " "+playIntent);
             playIntent = new Intent(this, MusicService.class);
             playIntent.setAction(Constants.ACTION.STARTFOREGROUND_ACTION);
             bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
@@ -645,66 +647,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
 
     }
 
-/*
-    @Override
-    public void onBufferingUpdate(MediaPlayer mediaPlayer, int i) {
-        seekBar.setSecondaryProgress(i);
-    }
 
-
-
-    public void playSong(String mp3, String title, String artist, String songId) {
-
-        try {
-            player.reset();
-            s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
-            favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
-            playpause.setImageResource(R.drawable.ic_play);
-            currentTitle = title;
-            currentArtist = artist;
-            utils.currentId = songId;
-            player.setDataSource(mp3);
-            player.prepareAsync();
-            if (isSearchSelected) utils.updateIndex();
-            else utils.updateIndexFavs();
-            artistName.setText("");
-            songTitle.setText("");
-            playerLayout.setVisibility(View.VISIBLE);
-            progressBar.setVisibility(View.VISIBLE);
-            prevPlayed = true;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-
-    }*/
-
-    //
-//    @Override
-//    public void onAudioFocusChange(int focusChange) {
-//        switch (focusChange) {
-//
-//            case AudioManager.AUDIOFOCUS_LOSS:
-//                // Lost focus for an unbounded amount of time: stop playback and release media player
-//                if (player.isPlaying()) player.stop();
-//                player.release();
-//                player = null;
-//                break;
-//
-//            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-//                // Lost focus for a short time, but we have to stop
-//                // playback. We don't release the media player because playback
-//                // is likely to resume
-//                if (player.isPlaying()) player.pause();
-//                break;
-//
-//            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-//                // Lost focus for a short time, but it's ok to keep playing
-//                // at an attenuated level
-//                if (player.isPlaying()) player.setVolume(0.1f, 0.1f);
-//                break;
-//        }
-//    }
     class ViewPagerAdapter extends FragmentPagerAdapter {
         private final List<Fragment> mFragmentList = new ArrayList<>();
         private final List<String> mFragmentTitleList = new ArrayList<>();

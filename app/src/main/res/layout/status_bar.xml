@@ -28,12 +28,18 @@
             android:layout_height="wrap_content"
             android:textColor="@color/vk_white"
             android:textSize="@dimen/text_size_medium"
+            android:singleLine="true"
+
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/status_bar_artist_name"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:singleLine="true"
+
+            android:textColor="@color/vk_white"
+            />
 
     </LinearLayout>
 

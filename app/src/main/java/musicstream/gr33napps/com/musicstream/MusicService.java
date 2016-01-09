@@ -61,7 +61,7 @@ public class MusicService extends Service {
 
     //current position fav songs
     private int songFavPosn;
-    private  RemoteViews views,bigViews;
+    private RemoteViews views, bigViews;
 
 
     private VKRequest request;
@@ -138,8 +138,7 @@ public class MusicService extends Service {
 
         Intent notificationIntent = new Intent(this, TestActivity.class);
         notificationIntent.setAction(Constants.ACTION.MAIN_ACTION);
-        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
                 notificationIntent, 0);
 
@@ -174,7 +173,7 @@ public class MusicService extends Service {
                     android.R.drawable.ic_media_pause);
             bigViews.setImageViewResource(R.id.status_bar_play,
                     android.R.drawable.ic_media_pause);
-        }else{
+        } else {
             views.setImageViewResource(R.id.status_bar_play,
                     android.R.drawable.ic_media_play);
             bigViews.setImageViewResource(R.id.status_bar_play,
@@ -190,7 +189,7 @@ public class MusicService extends Service {
         status.contentView = views;
         status.bigContentView = bigViews;
         status.flags = Notification.FLAG_ONGOING_EVENT;
-        status.icon = R.mipmap.ic_launcher;
+        status.icon = android.R.drawable.ic_media_play;
         status.contentIntent = pendingIntent;
         startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
     }
@@ -199,10 +198,13 @@ public class MusicService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) return START_STICKY;
         if (intent.getAction().equals(Constants.ACTION.PREV_ACTION)) {
-            prevSong(true);
+            if (mainInterface.isSearchSelected)
+                prevSong(true);
+            else
+                prevSong(false);
 
         } else if (intent.getAction().equals(Constants.ACTION.PLAY_ACTION)) {
-            if(player.isPlaying()){
+            if (player.isPlaying()) {
                 player.pause();
                 views.setImageViewResource(R.id.status_bar_play,
                         android.R.drawable.ic_media_play);
@@ -213,8 +215,7 @@ public class MusicService extends Service {
                 status.flags = Notification.FLAG_ONGOING_EVENT;
                 startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
                 mainInterface.playpause.setImageResource(R.drawable.ic_play);
-            }
-            else {
+            } else {
                 player.start();
                 views.setImageViewResource(R.id.status_bar_play,
                         android.R.drawable.ic_media_pause);
@@ -228,8 +229,10 @@ public class MusicService extends Service {
             }
 
         } else if (intent.getAction().equals(Constants.ACTION.NEXT_ACTION)) {
-            nextSong(true);
-
+                if (mainInterface.isSearchSelected)
+                    nextSong(true);
+                else
+                    nextSong(false);
         } else if (intent.getAction().equals(
                 Constants.ACTION.STOPFOREGROUND_ACTION)) {
             Log.i(LOG_TAG, "Received Stop Foreground Intent");
@@ -244,7 +247,6 @@ public class MusicService extends Service {
     public void onCreate() {
         super.onCreate();
         initMusicPlayer();
-//        broadcaster = LocalBroadcastManager.getInstance(this);
     }
 
     @Nullable
@@ -263,19 +265,6 @@ public class MusicService extends Service {
         status.bigContentView = bigViews;
         status.flags = Notification.FLAG_ONGOING_EVENT;
         startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
-//        Intent notIntent = new Intent(getBaseContext(), TestActivity.class);
-//        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//        PendingIntent pendInt = PendingIntent.getActivity(getBaseContext(), 0,
-//                notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-//        Notification.Builder builder = new Notification.Builder(getBaseContext());
-//
-//        builder.setContentIntent(pendInt)
-//                .setSmallIcon(android.R.drawable.ic_media_pause)
-//                .setOngoing(true)
-//                .setContentTitle(currentSong.title)
-//                .setContentText(currentSong.artist);
-//        Notification not = builder.build();
-//        startForeground(id, not);
         player.pause();
     }
 
@@ -288,19 +277,6 @@ public class MusicService extends Service {
         status.bigContentView = bigViews;
         status.flags = Notification.FLAG_ONGOING_EVENT;
         startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
-//        Intent notIntent = new Intent(getBaseContext(), TestActivity.class);
-//        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//        PendingIntent pendInt = PendingIntent.getActivity(getBaseContext(), 0,
-//                notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-//        Notification.Builder builder = new Notification.Builder(getBaseContext());
-//
-//        builder.setContentIntent(pendInt)
-//                .setSmallIcon(android.R.drawable.ic_media_play)
-//                .setOngoing(true)
-//                .setContentTitle(currentSong.title)
-//                .setContentText(currentSong.artist);
-//        Notification not = builder.build();
-//        startForeground(id, not);
         player.start();
     }
 
@@ -319,6 +295,7 @@ public class MusicService extends Service {
             if (search) {
                 final VKApiAudio song = songs.get(songPosn);
                 currentSong = song;
+                player.stop();
                 player.reset();
                 player.setDataSource(song.url);
                 mainInterface.runOnUiThread(new Runnable() {
@@ -337,19 +314,6 @@ public class MusicService extends Service {
                         status.bigContentView = bigViews;
                         status.flags = Notification.FLAG_ONGOING_EVENT;
                         startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
-//                        Intent notIntent = new Intent(getBaseContext(), TestActivity.class);
-//                        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//                        PendingIntent pendInt = PendingIntent.getActivity(getBaseContext(), 0,
-//                                notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-//                        Notification.Builder builder = new Notification.Builder(getBaseContext());
-//
-//                        builder.setContentIntent(pendInt)
-//                                .setSmallIcon(android.R.drawable.ic_media_play)
-//                                .setOngoing(true)
-//                                .setContentTitle(song.title)
-//                                .setContentText(song.artist);
-//                        Notification not = builder.build();
-//                        startForeground(id, not);
                     }
                 });
                 player.prepareAsync();
@@ -367,19 +331,6 @@ public class MusicService extends Service {
                             final VKApiAudio finalSong = new VKApiAudio();
                             finalSong.artist = favSong.getArtist();
                             finalSong.title = favSong.getTitle();
-//                            Intent notIntent = new Intent(getBaseContext(), TestActivity.class);
-//                            notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//                            PendingIntent pendInt = PendingIntent.getActivity(getBaseContext(), 0,
-//                                    notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-//                            Notification.Builder builder = new Notification.Builder(getBaseContext());
-//
-//                            builder.setContentIntent(pendInt)
-//                                    .setSmallIcon(android.R.drawable.ic_media_play)
-//                                    .setOngoing(true)
-//                                    .setContentTitle(finalSong.title)
-//                                    .setContentText(finalSong.artist);
-//                            Notification not = builder.build();
-//                            startForeground(id, not);
                             mainInterface.runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -406,8 +357,6 @@ public class MusicService extends Service {
                         }
                     }
                 });
-
-
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -455,7 +404,7 @@ public class MusicService extends Service {
     public void onDestroy() {
         super.onDestroy();
         if (player.isPlaying())
-        player.stop();
+            player.stop();
         player.release();
 
     }
@@ -468,7 +417,6 @@ public class MusicService extends Service {
     }
 
     public void nextSong(boolean search) {
-
         if (search) {
             this.songPosn++;
             if (this.songPosn >= songs.size()) songPosn = songs.size() - 1;
@@ -490,17 +438,14 @@ public class MusicService extends Service {
         }
         this.playSong(search);
     }
-
-    static final public String COPA_RESULT = "com.controlj.copame.backend.COPAService.REQUEST_PROCESSED";
-
-    static final public String COPA_MESSAGE = "com.controlj.copame.backend.COPAService.COPA_MSG";
-
-    public void sendResult(String message) {
-        Intent intent = new Intent(COPA_RESULT);
-        if(message != null)
-            intent.putExtra(COPA_MESSAGE, message);
-        broadcaster.sendBroadcast(intent);
-    }
-
-
+//    static final public String COPA_RESULT = "com.controlj.copame.backend.COPAService.REQUEST_PROCESSED";
+//
+//    static final public String COPA_MESSAGE = "com.controlj.copame.backend.COPAService.COPA_MSG";
+//
+//    public void sendResult(String message) {
+//        Intent intent = new Intent(COPA_RESULT);
+//        if (message != null)
+//            intent.putExtra(COPA_MESSAGE, message);
+//        broadcaster.sendBroadcast(intent);
+//    }
 }

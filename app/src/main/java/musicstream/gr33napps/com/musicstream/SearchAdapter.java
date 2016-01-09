@@ -104,6 +104,7 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SongViewHo
         RelativeLayout songLayout;
         ImageButton overflowBtn;
         Integer i;
+
         SongViewHolder(View itemView) {
             super(itemView);
             itemView.setClickable(true);
@@ -132,7 +133,6 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SongViewHo
             mainActivityRef.songPicked(selectedPos);
             //mainActivityRef.playSong(mp3, title.getText().toString(), artist.getText().toString(), vkid);
         }
-
 
 
         private void openBottomSheet() {

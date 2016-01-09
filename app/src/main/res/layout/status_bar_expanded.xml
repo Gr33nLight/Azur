@@ -97,7 +97,7 @@
             android:fadingEdge="horizontal"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:maxLines="1"
+            android:singleLine="true"
             android:text="Artist Name" />
     </LinearLayout>
 </RelativeLayout>
