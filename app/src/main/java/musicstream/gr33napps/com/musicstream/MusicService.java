@@ -189,7 +189,7 @@ public class MusicService extends Service {
         status.contentView = views;
         status.bigContentView = bigViews;
         status.flags = Notification.FLAG_ONGOING_EVENT;
-        status.icon = android.R.drawable.ic_media_play;
+        status.icon =R.mipmap.ic_launcher;
         status.contentIntent = pendingIntent;
         startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
     }
