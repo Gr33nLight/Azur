@@ -24,6 +24,7 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
@@ -64,12 +65,12 @@ import java.util.concurrent.TimeUnit;
 public class TestActivity extends AppCompatActivity implements View.OnTouchListener, SwipeRefreshLayout.OnRefreshListener {
 
     private static final String TAG = "Gr33nDebug";
-    private  ImageView playpause, fwd, bwd;//setting static attributes because when we return from outside the activity we want them to match the current song playing
-    private  TextView songTitle, artistName, totalTime, currentTime; //setting static attributes because when we return from outside the activity we want them to match the current song playing
-    private  ProgressBar progressBar;
-    private  SeekBar seekBar;
+    public ImageView playpause, fwd, bwd;//setting static attributes because when we return from outside the activity we want them to match the current song playing
+    private TextView songTitle, artistName, totalTime, currentTime; //setting static attributes because when we return from outside the activity we want them to match the current song playing
+    private ProgressBar progressBar;
+    private SeekBar seekBar;
 
-    public  String currentTitle, currentArtist;//setting static attributes because when we return from outside the activity we want them to match the current song playing
+    public String currentTitle, currentArtist;//setting static attributes because when we return from outside the activity we want them to match the current song playing
 
     public static boolean prevPlayed = false;
     public static int lengthms, seekpos = 0;
@@ -91,8 +92,10 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     private TestActivity act;
     private boolean isPrepared = false;
     private SwipeRefreshLayout swipeRefreshLayout;
+    private BroadcastReceiver receiver;
 
     private Updater updater;
+
     public static DBHelper getSongsDb() {
 
         return songsDb;
@@ -113,21 +116,15 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
 
             Log.d(TAG, "binded!");
             musicSrv.setMainInterface(act);
-            if (musicSrv.getPlayer().isPlaying()){
-
+            if (musicSrv.getPlayer().isPlaying()) {
 
 
             }
-
-
             musicSrv.getPlayer().setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 @Override
                 public void onPrepared(MediaPlayer mp) {
                     isPrepared = true;
                     adapter.notifyDataSetChanged();
-
-
-
                     playpause.setImageResource(R.drawable.ic_pause);
                     if (updater != null)
                         updater.ferma();
@@ -146,42 +143,43 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
                     runUpdater();
                 }
 
-                    });
-                    musicSrv.getPlayer().setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                        @Override
-                        public void onCompletion(MediaPlayer mediaPlayer) {
-                            progressBar.setVisibility(View.VISIBLE);
-                            if (isSearchSelected) {
-                                musicSrv.nextSong(true);
-                                s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
-                                s.getAdapter().setSelectedPos(musicSrv.getSongPosn());
-                                s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
-                            } else {
-                                musicSrv.nextSong(false);
-                                favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
-                                favs.getAdapter().setSelectedPos(musicSrv.getSongFavPosn());
-                                favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
-                            }
-
-                        }
-
-                    });
-
-                    musicSrv.getPlayer().setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
-                        @Override
-                        public void onBufferingUpdate(MediaPlayer mp, int percent) {
-                            seekBar.setSecondaryProgress(percent);
-                        }
-                    });
-                }
-
+            });
+            musicSrv.getPlayer().setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                 @Override
-                public void onServiceDisconnected(ComponentName name) {
-                    musicBound = false;
-                    musicSrv = null;
-                    musicConnection = null;
+                public void onCompletion(MediaPlayer mediaPlayer) {
+                    progressBar.setVisibility(View.VISIBLE);
+                    if (isSearchSelected) {
+                        musicSrv.nextSong(true);
+                        s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
+                        s.getAdapter().setSelectedPos(musicSrv.getSongPosn());
+                        s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
+                    } else {
+                        musicSrv.nextSong(false);
+                        favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
+                        favs.getAdapter().setSelectedPos(musicSrv.getSongFavPosn());
+                        favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
+                    }
+
                 }
-            };
+
+            });
+
+            musicSrv.getPlayer().setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
+                @Override
+                public void onBufferingUpdate(MediaPlayer mp, int percent) {
+                    seekBar.setSecondaryProgress(percent);
+                }
+            });
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            musicBound = false;
+            musicSrv = null;
+            musicConnection = null;
+        }
+    };
+
     class Updater extends Thread {
 
         boolean running = true;
@@ -226,6 +224,13 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
+//        receiver = new BroadcastReceiver() {
+//            @Override
+//            public void onReceive(Context context, Intent intent) {
+//                String s = intent.getStringExtra(MusicService.COPA_MESSAGE);
+//                // do something here.
+//            }
+//        };
         s = new SearchFragment();
         favs = new FavouritesFragment();
         act = this;
@@ -311,8 +316,22 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         currentArtist = song.artist;
         songTitle.setText("");
         artistName.setText("");
-        // progressBar.setVisibility(View.INVISIBLE);
+        playpause.setImageResource(R.drawable.ic_play);
+        progressBar.setVisibility(View.VISIBLE);
+        Log.e(TAG, "issSearch:" + isSearchSelected + " pos: " + s.getAdapter().getSelectedPos());
+        if(playerLayout.getVisibility() == View.GONE)playerLayout.setVisibility(View.VISIBLE);
+        if (isSearchSelected){
+            s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
+            s.getAdapter().setSelectedPos(musicSrv.getSongPosn());
+            s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
 
+        }
+        else{
+            s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
+            favs.getAdapter().setSelectedPos(musicSrv.getSongFavPosn());
+            favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
+
+        }
     }
 
     public void songPicked(int pos) {
@@ -349,11 +368,11 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
 
-
     private void runUpdater() {
         updater = new Updater();
         updater.start();
     }
+
     public VkAudioArray getData() {
         return data;
     }
@@ -390,7 +409,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     private void initGUI() {
 
         playerLayout = (LinearLayout) findViewById(R.id.playerLayout);
-//        playerLayout.setVisibility(View.GONE);
+        playerLayout.setVisibility(View.GONE);
         totalTime = (TextView) findViewById(R.id.totalTime);
         currentTime = (TextView) findViewById(R.id.currentTime);
         tabLayout = (TabLayout) findViewById(R.id.tabs);
@@ -456,8 +475,17 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     @Override
+    protected void onStop() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
+        super.onStop();
+    }
+
+    @Override
     protected void onStart() {
         super.onStart();
+//        LocalBroadcastManager.getInstance(this).registerReceiver((receiver),
+//                new IntentFilter(MusicService.COPA_RESULT)
+//        );
         if (!musicBound && playIntent == null) {
             playIntent = new Intent(this, MusicService.class);
             playIntent.setAction(Constants.ACTION.STARTFOREGROUND_ACTION);
@@ -534,8 +562,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onResume() {
         super.onResume();
-        final String SOME_ACTION = "com.android.UDPATE_SONG_SEEKBAR";
-        IntentFilter intentFilter = new IntentFilter(SOME_ACTION);
         //registerReceiver(receiver, intentFilter);
         //songsDb = new DBHelper(getBaseContext());
         //songDB was made static and inizialized only in onCreate
@@ -551,7 +577,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
                 currentTitle = favSong.title;
             }
         }
-
     }
 
     @Override
