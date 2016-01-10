@@ -222,6 +222,13 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
+        if (!musicBound && playIntent == null) {
+            playIntent = new Intent(this, MusicService.class);
+            playIntent.setAction(Constants.ACTION.STARTFOREGROUND_ACTION);
+            bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
+            startService(playIntent);
+            musicBound = true;
+        }
         s = new SearchFragment();
         favs = new FavouritesFragment();
         act = this;
@@ -472,22 +479,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     protected void onStop() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
         super.onStop();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-//        LocalBroadcastManager.getInstance(this).registerReceiver((receiver),
-//                new IntentFilter(MusicService.COPA_RESULT)
-//        );
-        if (!musicBound && playIntent == null) {
-            Log.e(TAG,"onStart "+musicBound + " "+playIntent);
-            playIntent = new Intent(this, MusicService.class);
-            playIntent.setAction(Constants.ACTION.STARTFOREGROUND_ACTION);
-            bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
-            startService(playIntent);
-            musicBound = true;
-        }
     }
 
     private void setupViewPager(ViewPager viewPager) {
