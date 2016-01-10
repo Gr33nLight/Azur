@@ -80,8 +80,8 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     private MaterialSearchView searchView;
     private LinearLayout playerLayout;
     private TabLayout tabLayout;
-    private SearchFragment s;
-    private FavouritesFragment favs;
+    public SearchFragment s;
+    public FavouritesFragment favs;
     private static DBHelper songsDb;
     private SQLiteDatabase db;
     public boolean isSearchSelected = true, wasPlaying = false;
@@ -222,13 +222,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
-//        receiver = new BroadcastReceiver() {
-//            @Override
-//            public void onReceive(Context context, Intent intent) {
-//                String s = intent.getStringExtra(MusicService.COPA_MESSAGE);
-//                // do something here.
-//            }
-//        };
         s = new SearchFragment();
         favs = new FavouritesFragment();
         act = this;

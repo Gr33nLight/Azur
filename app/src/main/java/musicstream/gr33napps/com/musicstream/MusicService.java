@@ -197,13 +197,22 @@ public class MusicService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) return START_STICKY;
-        if (intent.getAction().equals(Constants.ACTION.PREV_ACTION)) {
-            if (mainInterface.isSearchSelected)
+        if (intent.getAction().equals(Constants.ACTION.PREV_ACTION) && mainInterface.isPrepared) {
+            if (mainInterface.isSearchSelected){
                 prevSong(true);
-            else
+                mainInterface.s.getAdapter().notifyItemChanged(mainInterface.s.getAdapter().getSelectedPos());
+                mainInterface.s.getAdapter().setSelectedPos(getSongPosn());
+                mainInterface.s.getAdapter().notifyItemChanged(mainInterface.s.getAdapter().getSelectedPos());
+            }
+            else{
                 prevSong(false);
+                mainInterface.favs.getAdapter().notifyItemChanged(mainInterface.favs.getAdapter().getSelectedPos());
+                mainInterface.favs.getAdapter().setSelectedPos(getSongFavPosn());
+                mainInterface.favs.getAdapter().notifyItemChanged(mainInterface.favs.getAdapter().getSelectedPos());
 
-        } else if (intent.getAction().equals(Constants.ACTION.PLAY_ACTION)) {
+            }
+
+        } else if (intent.getAction().equals(Constants.ACTION.PLAY_ACTION) && mainInterface.isPrepared) {
             if (player.isPlaying()) {
                 player.pause();
                 views.setImageViewResource(R.id.status_bar_play,
@@ -228,11 +237,20 @@ public class MusicService extends Service {
                 mainInterface.playpause.setImageResource(R.drawable.ic_pause);
             }
 
-        } else if (intent.getAction().equals(Constants.ACTION.NEXT_ACTION)) {
-                if (mainInterface.isSearchSelected)
+        } else if (intent.getAction().equals(Constants.ACTION.NEXT_ACTION) && mainInterface.isPrepared) {
+                if (mainInterface.isSearchSelected){
                     nextSong(true);
-                else
+                   mainInterface.s.getAdapter().notifyItemChanged(mainInterface.s.getAdapter().getSelectedPos());
+                    mainInterface.s.getAdapter().setSelectedPos(getSongPosn());
+                    mainInterface.s.getAdapter().notifyItemChanged(mainInterface.s.getAdapter().getSelectedPos());
+                }
+                else{
                     nextSong(false);
+                    mainInterface.favs.getAdapter().notifyItemChanged(mainInterface.favs.getAdapter().getSelectedPos());
+                    mainInterface.favs.getAdapter().setSelectedPos(getSongFavPosn());
+                    mainInterface.favs.getAdapter().notifyItemChanged(mainInterface.favs.getAdapter().getSelectedPos());
+
+                }
         } else if (intent.getAction().equals(
                 Constants.ACTION.STOPFOREGROUND_ACTION)) {
             Log.i(LOG_TAG, "Received Stop Foreground Intent");
@@ -291,6 +309,7 @@ public class MusicService extends Service {
     }
 
     public void playSong(final boolean search) {
+        mainInterface.isPrepared=false;
         try {
             if (search) {
                 final VKApiAudio song = songs.get(songPosn);
