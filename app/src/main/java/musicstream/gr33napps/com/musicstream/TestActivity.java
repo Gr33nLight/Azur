@@ -185,6 +185,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         @Override
         public void run() {
             while (seekBar.getProgress() <= 100 && running) {
+                Log.e(TAG, "running updater");
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -198,6 +199,10 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
                                         TimeUnit.MILLISECONDS.toSeconds(total) -
                                                 TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(total))
                                 ));
+                                musicSrv.updateTime(String.format("%d:%02d",
+                                        TimeUnit.MILLISECONDS.toMinutes(total),
+                                        TimeUnit.MILLISECONDS.toSeconds(total) -
+                                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(total))));
 
                             }
                         } catch (IllegalStateException e) {
@@ -318,14 +323,13 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         artistName.setText("");
         playpause.setImageResource(R.drawable.ic_play);
         progressBar.setVisibility(View.VISIBLE);
-        if(playerLayout.getVisibility() == View.GONE)playerLayout.setVisibility(View.VISIBLE);
-        if (isSearchSelected){
+        if (playerLayout.getVisibility() == View.GONE) playerLayout.setVisibility(View.VISIBLE);
+        if (isSearchSelected) {
             s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
             s.getAdapter().setSelectedPos(musicSrv.getSongPosn());
             s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
 
-        }
-        else{
+        } else {
             s.getAdapter().notifyItemChanged(s.getAdapter().getSelectedPos());
             favs.getAdapter().setSelectedPos(musicSrv.getSongFavPosn());
             favs.getAdapter().notifyItemChanged(favs.getAdapter().getSelectedPos());
@@ -370,6 +374,10 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     private void runUpdater() {
         updater = new Updater();
         updater.start();
+    }
+
+    private void stopUpdater() {
+        updater.ferma();
     }
 
     public VkAudioArray getData() {
@@ -463,7 +471,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     public void togglePlayback() {
-        if(isPrepared){
+        if (isPrepared) {
             if (!(musicSrv.getPlayer().isPlaying()) && prevPlayed) {
                 playpause.setImageResource(R.drawable.ic_pause);
                 musicSrv.play();
@@ -548,6 +556,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onResume() {
         super.onResume();
+        if (updater != null && !updater.running) runUpdater();
         //registerReceiver(receiver, intentFilter);
         //songsDb = new DBHelper(getBaseContext());
         //songDB was made static and inizialized only in onCreate
@@ -568,7 +577,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onPause() {
         super.onPause();
-
+//        if (updater != null && updater.running) updater.ferma();
         //unregisterReceiver(receiver);
     }
 
@@ -626,8 +635,12 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (musicBound)
+
+        if (musicBound) {
+            musicSrv.stopForeground(true);
+            musicSrv.stopSelf();
             unbindService(musicConnection);
+        }
 
     }
 

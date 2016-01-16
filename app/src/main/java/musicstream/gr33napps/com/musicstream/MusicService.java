@@ -189,7 +189,7 @@ public class MusicService extends Service {
         status.contentView = views;
         status.bigContentView = bigViews;
         status.flags = Notification.FLAG_ONGOING_EVENT;
-        status.icon =R.mipmap.ic_launcher;
+        status.icon = R.mipmap.ic_launcher_notification;
         status.contentIntent = pendingIntent;
         startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
     }
@@ -198,13 +198,12 @@ public class MusicService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) return START_STICKY;
         if (intent.getAction().equals(Constants.ACTION.PREV_ACTION) && mainInterface.isPrepared) {
-            if (mainInterface.isSearchSelected){
+            if (mainInterface.isSearchSelected) {
                 prevSong(true);
                 mainInterface.s.getAdapter().notifyItemChanged(mainInterface.s.getAdapter().getSelectedPos());
                 mainInterface.s.getAdapter().setSelectedPos(getSongPosn());
                 mainInterface.s.getAdapter().notifyItemChanged(mainInterface.s.getAdapter().getSelectedPos());
-            }
-            else{
+            } else {
                 prevSong(false);
                 mainInterface.favs.getAdapter().notifyItemChanged(mainInterface.favs.getAdapter().getSelectedPos());
                 mainInterface.favs.getAdapter().setSelectedPos(getSongFavPosn());
@@ -238,19 +237,18 @@ public class MusicService extends Service {
             }
 
         } else if (intent.getAction().equals(Constants.ACTION.NEXT_ACTION) && mainInterface.isPrepared) {
-                if (mainInterface.isSearchSelected){
-                    nextSong(true);
-                   mainInterface.s.getAdapter().notifyItemChanged(mainInterface.s.getAdapter().getSelectedPos());
-                    mainInterface.s.getAdapter().setSelectedPos(getSongPosn());
-                    mainInterface.s.getAdapter().notifyItemChanged(mainInterface.s.getAdapter().getSelectedPos());
-                }
-                else{
-                    nextSong(false);
-                    mainInterface.favs.getAdapter().notifyItemChanged(mainInterface.favs.getAdapter().getSelectedPos());
-                    mainInterface.favs.getAdapter().setSelectedPos(getSongFavPosn());
-                    mainInterface.favs.getAdapter().notifyItemChanged(mainInterface.favs.getAdapter().getSelectedPos());
+            if (mainInterface.isSearchSelected) {
+                nextSong(true);
+                mainInterface.s.getAdapter().notifyItemChanged(mainInterface.s.getAdapter().getSelectedPos());
+                mainInterface.s.getAdapter().setSelectedPos(getSongPosn());
+                mainInterface.s.getAdapter().notifyItemChanged(mainInterface.s.getAdapter().getSelectedPos());
+            } else {
+                nextSong(false);
+                mainInterface.favs.getAdapter().notifyItemChanged(mainInterface.favs.getAdapter().getSelectedPos());
+                mainInterface.favs.getAdapter().setSelectedPos(getSongFavPosn());
+                mainInterface.favs.getAdapter().notifyItemChanged(mainInterface.favs.getAdapter().getSelectedPos());
 
-                }
+            }
         } else if (intent.getAction().equals(
                 Constants.ACTION.STOPFOREGROUND_ACTION)) {
             Log.i(LOG_TAG, "Received Stop Foreground Intent");
@@ -309,7 +307,7 @@ public class MusicService extends Service {
     }
 
     public void playSong(final boolean search) {
-        mainInterface.isPrepared=false;
+        mainInterface.isPrepared = false;
         try {
             if (search) {
                 final VKApiAudio song = songs.get(songPosn);
@@ -425,7 +423,6 @@ public class MusicService extends Service {
         if (player.isPlaying())
             player.stop();
         player.release();
-
     }
 
     public void setSong(int songIndex, boolean search) {
@@ -457,14 +454,24 @@ public class MusicService extends Service {
         }
         this.playSong(search);
     }
-//    static final public String COPA_RESULT = "com.controlj.copame.backend.COPAService.REQUEST_PROCESSED";
-//
-//    static final public String COPA_MESSAGE = "com.controlj.copame.backend.COPAService.COPA_MSG";
-//
-//    public void sendResult(String message) {
-//        Intent intent = new Intent(COPA_RESULT);
-//        if (message != null)
-//            intent.putExtra(COPA_MESSAGE, message);
-//        broadcaster.sendBroadcast(intent);
-//    }
+
+    public void updateTime(final String time) {
+        new Thread() {
+            public void run() {
+                mainInterface.runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        bigViews.setTextViewText(R.id.status_bar_time, time);
+                        status.bigContentView = bigViews;
+                        status.flags = Notification.FLAG_ONGOING_EVENT;
+                        startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
+                    }
+                });
+
+            }
+        }.start();
+
+    }
+
 }
