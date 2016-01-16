@@ -210,7 +210,6 @@ public class MusicService extends Service {
                 mainInterface.favs.getAdapter().notifyItemChanged(mainInterface.favs.getAdapter().getSelectedPos());
 
             }
-
         } else if (intent.getAction().equals(Constants.ACTION.PLAY_ACTION) && mainInterface.isPrepared) {
             if (player.isPlaying()) {
                 player.pause();

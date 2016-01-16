@@ -199,10 +199,10 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
                                         TimeUnit.MILLISECONDS.toSeconds(total) -
                                                 TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(total))
                                 ));
-                                musicSrv.updateTime(String.format("%d:%02d",
-                                        TimeUnit.MILLISECONDS.toMinutes(total),
-                                        TimeUnit.MILLISECONDS.toSeconds(total) -
-                                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(total))));
+//                                musicSrv.updateTime(String.format("%d:%02d",
+//                                        TimeUnit.MILLISECONDS.toMinutes(total),
+//                                        TimeUnit.MILLISECONDS.toSeconds(total) -
+//                                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(total))));
 
                             }
                         } catch (IllegalStateException e) {
@@ -374,10 +374,6 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     private void runUpdater() {
         updater = new Updater();
         updater.start();
-    }
-
-    private void stopUpdater() {
-        updater.ferma();
     }
 
     public VkAudioArray getData() {
@@ -577,7 +573,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onPause() {
         super.onPause();
-//        if (updater != null && updater.running) updater.ferma();
+        if (updater != null && updater.running) updater.ferma();
         //unregisterReceiver(receiver);
     }
 
