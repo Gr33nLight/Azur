@@ -54,6 +54,8 @@ public class MusicService extends Service {
     private List<VKSong> favSongs;
     //current position songs
     private int songPosn;
+    //notification manager
+    private NotificationManager notificationManager;
 
     public boolean isPlayFromSearch() {
         return search;
@@ -87,7 +89,6 @@ public class MusicService extends Service {
     public void setSongs(VkAudioArray songs) {
         this.songs = songs;
         showNotification();
-
     }
 
     public void setFavSongs(List<VKSong> songs) {
@@ -196,8 +197,12 @@ public class MusicService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.e(TAG,"called onStartCommand");
+        notificationManager = (NotificationManager) getApplicationContext()
+                .getSystemService(NOTIFICATION_SERVICE);
         if (intent == null) return START_STICKY;
         if (intent.getAction().equals(Constants.ACTION.PREV_ACTION) && mainInterface.isPrepared) {
+            updateTime("0:00");
             if (mainInterface.isSearchSelected) {
                 prevSong(true);
                 mainInterface.s.getAdapter().notifyItemChanged(mainInterface.s.getAdapter().getSelectedPos());
@@ -212,30 +217,13 @@ public class MusicService extends Service {
             }
         } else if (intent.getAction().equals(Constants.ACTION.PLAY_ACTION) && mainInterface.isPrepared) {
             if (player.isPlaying()) {
-                player.pause();
-                views.setImageViewResource(R.id.status_bar_play,
-                        android.R.drawable.ic_media_play);
-                bigViews.setImageViewResource(R.id.status_bar_play,
-                        android.R.drawable.ic_media_play);
-                status.contentView = views;
-                status.bigContentView = bigViews;
-                status.flags = Notification.FLAG_ONGOING_EVENT;
-                startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
-                mainInterface.playpause.setImageResource(R.drawable.ic_play);
+               pause();
             } else {
-                player.start();
-                views.setImageViewResource(R.id.status_bar_play,
-                        android.R.drawable.ic_media_pause);
-                bigViews.setImageViewResource(R.id.status_bar_play,
-                        android.R.drawable.ic_media_pause);
-                status.contentView = views;
-                status.bigContentView = bigViews;
-                status.flags = Notification.FLAG_ONGOING_EVENT;
-                startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
-                mainInterface.playpause.setImageResource(R.drawable.ic_pause);
+               play();
             }
 
         } else if (intent.getAction().equals(Constants.ACTION.NEXT_ACTION) && mainInterface.isPrepared) {
+            updateTime("0:00");
             if (mainInterface.isSearchSelected) {
                 nextSong(true);
                 mainInterface.s.getAdapter().notifyItemChanged(mainInterface.s.getAdapter().getSelectedPos());
@@ -258,16 +246,11 @@ public class MusicService extends Service {
         return START_STICKY;
     }
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        initMusicPlayer();
-    }
-
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         initMusicPlayer();
+        Log.e(TAG, "msuic srv onBind");
         return musicBind;
     }
 
@@ -279,7 +262,9 @@ public class MusicService extends Service {
         status.contentView = views;
         status.bigContentView = bigViews;
         status.flags = Notification.FLAG_ONGOING_EVENT;
-        startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
+        if (notificationManager != null)
+            notificationManager.notify(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
+        mainInterface.stopUpdater();
         player.pause();
     }
 
@@ -291,7 +276,9 @@ public class MusicService extends Service {
         status.contentView = views;
         status.bigContentView = bigViews;
         status.flags = Notification.FLAG_ONGOING_EVENT;
-        startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
+        if (notificationManager != null)
+            notificationManager.notify(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
+        mainInterface.runUpdater();
         player.start();
     }
 
@@ -329,7 +316,8 @@ public class MusicService extends Service {
                         status.contentView = views;
                         status.bigContentView = bigViews;
                         status.flags = Notification.FLAG_ONGOING_EVENT;
-                        startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
+                        if (notificationManager != null)
+                            notificationManager.notify(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
                     }
                 });
                 player.prepareAsync();
@@ -361,7 +349,8 @@ public class MusicService extends Service {
                                     status.contentView = views;
                                     status.bigContentView = bigViews;
                                     status.flags = Notification.FLAG_ONGOING_EVENT;
-                                    startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
+                                    if (notificationManager != null)
+                                        notificationManager.notify(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
                                     mainInterface.playCallBack(finalSong);
 
                                 }
@@ -455,21 +444,26 @@ public class MusicService extends Service {
     }
 
     public void updateTime(final String time) {
-        new Thread() {
-            public void run() {
-                mainInterface.runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        bigViews.setTextViewText(R.id.status_bar_time, time);
-                        status.bigContentView = bigViews;
-                        status.flags = Notification.FLAG_ONGOING_EVENT;
-                        startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
-                    }
-                });
-
-            }
-        }.start();
+        bigViews.setTextViewText(R.id.status_bar_time, time);
+        status.bigContentView = bigViews;
+        status.flags = Notification.FLAG_ONGOING_EVENT;
+        if (notificationManager != null)
+            notificationManager.notify(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
+//        new Thread() {
+//            public void run() {
+//                mainInterface.runOnUiThread(new Runnable() {
+//
+//                    @Override
+//                    public void run() {
+//                        bigViews.setTextViewText(R.id.status_bar_time, time);
+//                        status.bigContentView = bigViews;
+//                        status.flags = Notification.FLAG_ONGOING_EVENT;
+//                        startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
+//                    }
+//                });
+//
+//            }
+//        }.start();
 
     }
 

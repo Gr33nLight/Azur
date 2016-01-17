@@ -32,6 +32,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -199,10 +200,10 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
                                         TimeUnit.MILLISECONDS.toSeconds(total) -
                                                 TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(total))
                                 ));
-//                                musicSrv.updateTime(String.format("%d:%02d",
-//                                        TimeUnit.MILLISECONDS.toMinutes(total),
-//                                        TimeUnit.MILLISECONDS.toSeconds(total) -
-//                                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(total))));
+                                musicSrv.updateTime(String.format("%d:%02d",
+                                        TimeUnit.MILLISECONDS.toMinutes(total),
+                                        TimeUnit.MILLISECONDS.toSeconds(total) -
+                                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(total))));
 
                             }
                         } catch (IllegalStateException e) {
@@ -371,9 +372,15 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
 
-    private void runUpdater() {
+    public void runUpdater() {
+        Log.e(TAG, "called runUpdater");
         updater = new Updater();
         updater.start();
+    }
+
+    public void stopUpdater() {
+        Log.e(TAG, "called stopUpdater");
+        if (updater != null) updater.ferma();
     }
 
     public VkAudioArray getData() {
@@ -552,7 +559,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onResume() {
         super.onResume();
-        if (updater != null && !updater.running) runUpdater();
+//        if (updater != null && !updater.running) runUpdater();
         //registerReceiver(receiver, intentFilter);
         //songsDb = new DBHelper(getBaseContext());
         //songDB was made static and inizialized only in onCreate
@@ -573,7 +580,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onPause() {
         super.onPause();
-        if (updater != null && updater.running) updater.ferma();
+//        if (updater != null && updater.running) updater.ferma();
         //unregisterReceiver(receiver);
     }
 
@@ -637,6 +644,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
             musicSrv.stopSelf();
             unbindService(musicConnection);
         }
+        if(updater!=null)updater.ferma();
 
     }
 
@@ -668,6 +676,15 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
         public CharSequence getPageTitle(int position) {
             return mFragmentTitleList.get(position);
         }
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            moveTaskToBack(true);
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 }
 
