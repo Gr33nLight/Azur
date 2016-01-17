@@ -197,7 +197,7 @@ public class MusicService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.e(TAG,"called onStartCommand");
+        Log.e(TAG, "called onStartCommand");
         notificationManager = (NotificationManager) getApplicationContext()
                 .getSystemService(NOTIFICATION_SERVICE);
         if (intent == null) return START_STICKY;
@@ -217,9 +217,9 @@ public class MusicService extends Service {
             }
         } else if (intent.getAction().equals(Constants.ACTION.PLAY_ACTION) && mainInterface.isPrepared) {
             if (player.isPlaying()) {
-               pause();
+                pause();
             } else {
-               play();
+                play();
             }
 
         } else if (intent.getAction().equals(Constants.ACTION.NEXT_ACTION) && mainInterface.isPrepared) {
@@ -444,26 +444,21 @@ public class MusicService extends Service {
     }
 
     public void updateTime(final String time) {
-        bigViews.setTextViewText(R.id.status_bar_time, time);
-        status.bigContentView = bigViews;
-        status.flags = Notification.FLAG_ONGOING_EVENT;
-        if (notificationManager != null)
-            notificationManager.notify(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
-//        new Thread() {
-//            public void run() {
-//                mainInterface.runOnUiThread(new Runnable() {
-//
-//                    @Override
-//                    public void run() {
-//                        bigViews.setTextViewText(R.id.status_bar_time, time);
-//                        status.bigContentView = bigViews;
-//                        status.flags = Notification.FLAG_ONGOING_EVENT;
-//                        startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
-//                    }
-//                });
-//
-//            }
-//        }.start();
+        new Thread() {
+            public void run() {
+                mainInterface.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        bigViews.setTextViewText(R.id.status_bar_time, time);
+                        status.bigContentView = bigViews;
+                        status.flags = Notification.FLAG_ONGOING_EVENT;
+                        if (notificationManager != null)
+                            notificationManager.notify(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
+                    }
+                });
+
+            }
+        }.start();
 
     }
 
