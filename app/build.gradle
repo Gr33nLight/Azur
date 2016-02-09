@@ -23,7 +23,7 @@ android {
         applicationId "musicstream.gr33napps.com.musicstream"
         minSdkVersion 16
         targetSdkVersion 23
-        versionCode 4
+        versionCode 5
         versionName "0.1"
     }
     buildTypes {

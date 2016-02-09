@@ -18,6 +18,8 @@ import android.widget.RemoteViews;
 import android.widget.Toast;
 
 import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.answers.Answers;
+import com.crashlytics.android.answers.CustomEvent;
 import com.vk.sdk.api.VKApi;
 import com.vk.sdk.api.VKError;
 import com.vk.sdk.api.VKParameters;
@@ -290,6 +292,7 @@ public class MusicService extends Service {
     public void playSong(final boolean search) {
         mainInterface.isPrepared = false;
         try {
+            Answers.getInstance().logCustom(new CustomEvent("Played Song"));
             if (search) {
                 final VKApiAudio song = songs.get(songPosn);
                 currentSong = song;
