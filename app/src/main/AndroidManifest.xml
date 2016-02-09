@@ -45,7 +45,11 @@
             android:configChanges="orientation|keyboardHidden"
             android:screenOrientation="portrait" />
 
-        <service android:name=".MusicService"/>
+        <service
+            android:name=".MusicService" />
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="973c0e5ec396b4a8f796ebe9b45352850edf999b" />
     </application>
 
 </manifest>

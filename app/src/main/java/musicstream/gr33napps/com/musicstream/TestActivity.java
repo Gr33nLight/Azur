@@ -1,24 +1,16 @@
 package musicstream.gr33napps.com.musicstream;
 
-import android.app.Notification;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.database.sqlite.SQLiteDatabase;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.nfc.Tag;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.PowerManager;
-import android.provider.MediaStore;
 import android.speech.RecognizerIntent;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
@@ -44,6 +36,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.crashlytics.android.Crashlytics;
 import com.miguelcatalan.materialsearchview.MaterialSearchView;
 import com.vk.sdk.VKSdk;
 import com.vk.sdk.api.VKApi;
@@ -55,12 +48,8 @@ import com.vk.sdk.api.VKResponse;
 import com.vk.sdk.api.model.VKApiAudio;
 import com.vk.sdk.api.model.VkAudioArray;
 
-import junit.framework.Test;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 public class TestActivity extends AppCompatActivity implements View.OnTouchListener, SwipeRefreshLayout.OnRefreshListener {
@@ -519,6 +508,7 @@ public class TestActivity extends AppCompatActivity implements View.OnTouchListe
             @Override
             public void onError(VKError error) {
                 Toast.makeText(getBaseContext(), "Error retrieving list", Toast.LENGTH_LONG).show();
+                Crashlytics.log("error retrieving list" + error.errorMessage);
             }
         });
     }

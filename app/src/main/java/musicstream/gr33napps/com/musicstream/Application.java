@@ -3,9 +3,11 @@ package musicstream.gr33napps.com.musicstream;
 import android.content.Intent;
 import android.widget.Toast;
 
+import com.crashlytics.android.Crashlytics;
 import com.vk.sdk.VKAccessToken;
 import com.vk.sdk.VKAccessTokenTracker;
 import com.vk.sdk.VKSdk;
+import io.fabric.sdk.android.Fabric;
 
 public class Application extends android.app.Application {
 
@@ -24,6 +26,7 @@ public class Application extends android.app.Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        Fabric.with(this, new Crashlytics());
         vkAccessTokenTracker.startTracking();
         VKSdk.initialize(this);
     }

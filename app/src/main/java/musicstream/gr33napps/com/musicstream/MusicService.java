@@ -4,14 +4,9 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
-import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.media.session.MediaSession;
-import android.media.session.MediaSessionManager;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.PowerManager;
@@ -19,10 +14,10 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
-import android.widget.MediaController;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
+import com.crashlytics.android.Crashlytics;
 import com.vk.sdk.api.VKApi;
 import com.vk.sdk.api.VKError;
 import com.vk.sdk.api.VKParameters;
@@ -30,8 +25,6 @@ import com.vk.sdk.api.VKRequest;
 import com.vk.sdk.api.VKResponse;
 import com.vk.sdk.api.model.VKApiAudio;
 import com.vk.sdk.api.model.VkAudioArray;
-
-import junit.framework.Test;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -265,6 +258,7 @@ public class MusicService extends Service {
         if (notificationManager != null)
             notificationManager.notify(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
         mainInterface.stopUpdater();
+        mainInterface.playpause.setImageResource(R.drawable.ic_play);
         player.pause();
     }
 
@@ -279,6 +273,7 @@ public class MusicService extends Service {
         if (notificationManager != null)
             notificationManager.notify(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, status);
         mainInterface.runUpdater();
+        mainInterface.playpause.setImageResource(R.drawable.ic_pause);
         player.start();
     }
 
@@ -359,12 +354,14 @@ public class MusicService extends Service {
 
                         } catch (IOException e) {
                             e.printStackTrace();
+                            Crashlytics.logException(e);
                         }
                     }
                 });
             }
         } catch (IOException e) {
             e.printStackTrace();
+            Crashlytics.logException(e);
         }
     }
 
@@ -382,6 +379,7 @@ public class MusicService extends Service {
                     callback.successCallback(jsonobject.getString("url"));
                 } catch (JSONException e) {
                     e.printStackTrace();
+                    Crashlytics.logException(e);
                 }
             }
 
@@ -389,6 +387,7 @@ public class MusicService extends Service {
             public void onError(VKError error) {
                 super.onError(error);
                 Log.e(TAG, "error playing song");
+                Crashlytics.log("error playing song"+error.errorMessage);
             }
         });
         request.start();
